@@ -272,7 +272,7 @@ describe("Coding Agent Tools", () => {
 			fs.writeFileSync(testFile, originalContent);
 
 			const result = await editTool.execute("test-call-5", {
-				file: testFile,
+				path: testFile,
 				old_text: "world",
 				new_text: "testing",
 			});
@@ -291,7 +291,7 @@ describe("Coding Agent Tools", () => {
 
 			await expect(
 				editTool.execute("test-call-6", {
-					file: testFile,
+					path: testFile,
 					old_text: "nonexistent",
 					new_text: "testing",
 				}),
@@ -305,7 +305,7 @@ describe("Coding Agent Tools", () => {
 
 			await expect(
 				editTool.execute("test-call-7", {
-					file: testFile,
+					path: testFile,
 					old_text: "foo",
 					new_text: "bar",
 				}),
@@ -317,7 +317,7 @@ describe("Coding Agent Tools", () => {
 			fs.writeFileSync(testFile, "foo bar foo baz foo");
 
 			const result = await editTool.execute("test-all-1", {
-				file: testFile,
+				path: testFile,
 				old_text: "foo",
 				new_text: "qux",
 				all: true,
@@ -349,7 +349,7 @@ function b() {
 			// With multiple fuzzy matches, the tool rejects for safety to avoid ambiguous replacements
 			await expect(
 				editTool.execute("test-all-fuzzy", {
-					file: testFile,
+					path: testFile,
 					old_text: "if (x) {\n  doThing();\n}",
 					new_text: "if (y) {\n  doOther();\n}",
 					all: true,
@@ -363,7 +363,7 @@ function b() {
 
 			await expect(
 				editTool.execute("test-all-nomatch", {
-					file: testFile,
+					path: testFile,
 					old_text: "nonexistent",
 					new_text: "bar",
 					all: true,
@@ -376,7 +376,7 @@ function b() {
 			fs.writeFileSync(testFile, "start\nfoo\nbar\nend\nstart\nfoo\nbar\nend");
 
 			const result = await editTool.execute("test-all-multiline", {
-				file: testFile,
+				path: testFile,
 				old_text: "foo\nbar",
 				new_text: "replaced",
 				all: true,
@@ -392,7 +392,7 @@ function b() {
 			fs.writeFileSync(testFile, "hello world");
 
 			const result = await editTool.execute("test-all-single", {
-				file: testFile,
+				path: testFile,
 				old_text: "world",
 				new_text: "universe",
 				all: true,
@@ -611,7 +611,7 @@ describe("edit tool CRLF handling", () => {
 		fs.writeFileSync(testFile, "line one\r\nline two\r\nline three\r\n");
 
 		const result = await editTool.execute("test-crlf-1", {
-			file: testFile,
+			path: testFile,
 			old_text: "line two\n",
 			new_text: "replaced line\n",
 		});
@@ -624,7 +624,7 @@ describe("edit tool CRLF handling", () => {
 		fs.writeFileSync(testFile, "first\r\nsecond\r\nthird\r\n");
 
 		await editTool.execute("test-crlf-2", {
-			file: testFile,
+			path: testFile,
 			old_text: "second\n",
 			new_text: "REPLACED\n",
 		});
@@ -638,7 +638,7 @@ describe("edit tool CRLF handling", () => {
 		fs.writeFileSync(testFile, "first\nsecond\nthird\n");
 
 		await editTool.execute("test-lf-1", {
-			file: testFile,
+			path: testFile,
 			old_text: "second\n",
 			new_text: "REPLACED\n",
 		});
@@ -654,7 +654,7 @@ describe("edit tool CRLF handling", () => {
 
 		await expect(
 			editTool.execute("test-crlf-dup", {
-				file: testFile,
+				path: testFile,
 				old_text: "hello\nworld\n",
 				new_text: "replaced\n",
 			}),
@@ -674,7 +674,7 @@ describe("edit tool CRLF handling", () => {
 			const session = createTestToolSession(hashDir);
 			const hashlineEditTool = new EditTool(session);
 			const result = await hashlineEditTool.execute("hashline-delete-1", {
-				file: testFile,
+				path: testFile,
 				edits: [],
 				delete: true,
 			});
@@ -702,7 +702,7 @@ describe("edit tool CRLF handling", () => {
 			const session = createTestToolSession(hashDir);
 			const hashlineEditTool = new EditTool(session);
 			const result = await hashlineEditTool.execute("hashline-rename-1", {
-				file: sourceFile,
+				path: sourceFile,
 				edits: [],
 				move: targetFile,
 			});
@@ -724,7 +724,7 @@ describe("edit tool CRLF handling", () => {
 		fs.writeFileSync(testFile, "\uFEFFfirst\r\nsecond\r\nthird\r\n");
 
 		await editTool.execute("test-bom", {
-			file: testFile,
+			path: testFile,
 			old_text: "second\n",
 			new_text: "REPLACED\n",
 		});
