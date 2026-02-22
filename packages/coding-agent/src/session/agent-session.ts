@@ -4141,6 +4141,7 @@ Be thorough - include exact file paths, function names, error messages, and tech
 
 		// Flush pending writes before branching
 		await this.sessionManager.flush();
+		this.#asyncJobManager?.cancelAll();
 
 		if (!selectedEntry.parentId) {
 			await this.sessionManager.newSession({ parentSession: previousSessionFile });
