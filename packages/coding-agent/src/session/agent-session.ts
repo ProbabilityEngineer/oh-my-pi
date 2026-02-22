@@ -2947,6 +2947,7 @@ Be thorough - include exact file paths, function names, error messages, and tech
 
 			// Start a new session
 			await this.sessionManager.flush();
+			this.#asyncJobManager?.cancelAll();
 			await this.sessionManager.newSession();
 			this.agent.reset();
 			this.agent.sessionId = this.sessionManager.getSessionId();
