@@ -249,50 +249,119 @@ ast-grep is a AST-based code search tool, faster than grep for structural querie
 
 ### 3.1 Architecture
 
-**Files:**
+**Files**:
 - `packages/coding-agent/src/ast-grep/` (main implementation)
-- `packages/coding-agent/src/core/tools/ast-grep.ts` (tool integration)
+- `packages/coding-agent/src/tools/ast-grep.ts` (tool integration)
+- `packages/coding-agent/src/capability/availability-detector.ts` (runtime detection)
 
-**Modules:**
+**Modules**:
 | Module | Purpose |
 |--------|---------|
-| `installer.ts` | ast-grep binary installation |
-| `settings-state.ts` | Install state management |
-| `agent-guided-install.ts` | Guided installation prompts |
-| `types.ts` | Type definitions |
+| `types.ts` | Type definitions (AstGrepMatch, AstGrepSearchParams) |
+| `config.ts` | Settings schema |
+| `index.ts` | Installation check functions |
+| `tools/ast-grep.ts` | AstGrepTool class with pattern matching |
 
 ### 3.2 Tool API
 
 ```typescript
 interface AstGrepSearchInput {
-  pattern: string;        // AST pattern or regex
+  pattern: string;        // AST pattern with $NAME, $$$ARGS metavariables
   path?: string;          // File/directory to search
-  language?: string;      // Language for AST parsing
-  include?: string[];     // Glob patterns to include
-  exclude?: string[];     // Glob patterns to exclude
-  rule?: string;          // ast-grep rule YAML
+  lang?: string;          // Language filter (ts, py, rs, go, java)
+  glob?: string;          // Glob pattern (*.ts, src/**/*.py)
+  limit?: number;         // Max results (default: 100, max 1000)
 }
 
 interface AstGrepSearchResult {
-  filePath: string;
   matches: {
+    path: string;
     line: number;
     column: number;
-    endLine: number;
-    endColumn: number;
-    message?: string;
-    severity?: "error" | "warning" | "info";
+    code: string;
+    lang: string;
   }[];
+  totalMatches: number;
+  truncated: boolean;
 }
 ```
 
-### 3.3 First-Class Built-in Tool
+### 3.3 Runtime Capability Detection
 
-- Registered in default tool surface alongside grep
-- Automatic installation detection
-- Agent-guided install prompts
-- Settings toggle in `/settings`
+ast-grep availability detected at runtime via `Bun.which("ast-grep")`:
 
+```typescript
+// availability-detector.ts
+export async function detectCapabilities(): Promise<Capabilities> {
+  return {
+    astGrep: await Bun.which("ast-grep") !== null,
+  };
+}
+```
+
+**Conditional Prompt Injection**:
+- Policy injected only when ast-grep binary detected
+- Adds ~150 tokens to system prompt when available
+- Keeps prompt minimal for users without ast-grep
+
+```markdown
+{{#if capabilities.astGrep}}
+### AST-grep: structural code search
+Use `ast_grep` tool for pattern-based code search. It matches AST nodes, not text.
+**Patterns**: `$NAME` (single node), `$$$ARGS` (multiple nodes).
+**Example**: `function $NAME($$$ARGS) { $BODY }` finds all functions.
+Prefer over regex for code search; understands syntax, ignores comments/strings.
+{{/if}}
+```
+
+### 3.4 Installation Guidance
+
+When ast-grep not found, tool returns installation instructions:
+
+```bash
+# Using Homebrew (macOS)
+brew install ast-grep
+
+# Using Cargo (Rust)
+cargo install ast-grep
+
+# Using npm
+npm install -g @ast-grep/cli
+```
+
+### 3.5 Pattern Examples
+
+```typescript
+// Function definitions
+function $NAME($$$ARGS) { $BODY }
+
+// Variable declarations
+const $NAME = $VALUE
+
+// Class definitions
+class $NAME { $$$BODY }
+
+// Import statements
+import { $NAME } from $SOURCE
+
+// Conditional statements
+if ($COND) { $BODY }
+```
+
+### 3.6 Implementation Status
+
+**Completed**:
+- ✅ AstGrepTool class with full pattern matching
+- ✅ Runtime capability detection
+- ✅ Conditional prompt injection
+- ✅ Installation guidance
+- ✅ 19 scenario tests (all passing)
+- ✅ Registered as builtin tool (`ast_grep`)
+
+**Integration**:
+- Tool available when ast-grep binary installed
+- Graceful degradation with install guidance when missing
+- No prompt bloat for users without ast-grep
 ---
 
 ## 4. Hooks System (Gastown)
@@ -418,71 +487,81 @@ When enabled:
 
 Moves hardcoded behavior guidance from code to external skill/prompt templates.
 
-### 5.1 Skill-Based Policies
+### 5.1 Runtime Capability Detection
+
+Detect optional capabilities at runtime to enable conditional prompt injection:
 
 ```typescript
-// Skill frontmatter
-interface SkillFrontmatter {
-  name?: string;
-  description?: string;
-  "disable-model-invocation"?: boolean;
+// availability-detector.ts
+export interface Capabilities {
+  astGrep: boolean;  // ast-grep binary available
+}
+
+export async function detectCapabilities(cwd?: string): Promise<Capabilities> {
+  return {
+    astGrep: await Bun.which("ast-grep") !== null,
+  };
 }
 ```
 
-### 5.2 Capability Policy Templates
+### 5.2 Conditional Prompt Injection
 
-Two tiers:
-1. **Core-only** (minimal): Essential rules for tool usage
-2. **Detailed** (optional): Full playbook with LSP/ast-grep guidance
+Capabilities passed to system prompt template context:
 
-### 5.3 Auto-Injection
-
-- Detect LSP/ast-grep availability at runtime
-- Inject appropriate policy into system prompt
-- Availability-aware template selection
-
-### 5.4 LSP vs ast-grep Guidance
-
-Template logic:
 ```typescript
-// Availability detection
-capabilitySignals: {
+// system-prompt.ts
+const capabilities = await detectCapabilities(resolvedCwd);
+
+return renderPromptTemplate(systemPromptTemplate, {
+  // ... other context
+  capabilities,  // { astGrep: boolean }
+});
+```
+
+Template uses Handlebars conditionals:
+
+```handlebars
+{{#if capabilities.astGrep}}
+### AST-grep: structural code search
+Use `ast_grep` tool for pattern-based code search...
+{{/if}}
+```
+
+**Benefits**:
+- No prompt bloat: only ~150 tokens when capability available
+- Graceful degradation: no mention of unavailable tools
+- Runtime detection: works across different environments
+
+### 5.3 Implementation Status
+
+**Completed**:
+- ✅ Runtime capability detection (ast-grep)
+- ✅ Conditional prompt injection in system-prompt.md
+- ✅ Capability detection wired into buildSystemPrompt()
+- ✅ Minimal token overhead (~150 tokens when injected)
+
+**Files**:
+- `packages/coding-agent/src/capability/availability-detector.ts`
+- `packages/coding-agent/src/system-prompt.ts`
+- `packages/coding-agent/src/prompts/system/system-prompt.md`
+
+### 5.4 Future Extensions
+
+Same pattern can be used for:
+- LSP server availability detection
+- Extension capability detection
+- Tool-specific feature flags
+
+```typescript
+export interface Capabilities {
+  astGrep: boolean;
   lsp?: {
     available: boolean;
     languages: string[];
   };
-  astGrep?: {
-    available: boolean;
-  };
+  // Add more capabilities as needed
 }
-
-// Tool selection guidance
-IF lsp.available AND astGrep.available:
-  - Use ast-grep for pattern search
-  - Use LSP for semantic analysis
-ELSE IF lsp.available:
-  - Use LSP for all code intelligence
-ELSE IF astGrep.available:
-  - Use ast-grep for structural search
-ELSE:
-  - Use grep for text search
 ```
-
-### 5.5 Refinements
-
-Various fixes and improvements:
-- Stop immediately after exact symbol-location match
-- Tighten semantic fallback to single canonical query
-- Add LSP target-position sanity guard
-- Stop on evidence-complete results and deduplicate repeated queries
-- Progress-gate lookup controls
-- Reduce extraction noise with retry and evidence guardrails
-- Suppress status-first lookups and enforce concise evidence output
-- Enforce discovery-first lookup and bounded completeness flow
-- Prefer file-first LSP calls with optional status guidance
-- Require lexical backstop for semantic reference coverage
-- Use ast-grep run pattern flow with LSP-first guidance
-
 ---
 
 ## 6. Settings & Runtime
