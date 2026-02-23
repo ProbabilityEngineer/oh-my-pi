@@ -455,6 +455,21 @@ export const SETTINGS_SCHEMA = {
 			submenu: true,
 		},
 	},
+	"astgrep.enabled": {
+		type: "boolean",
+		default: true,
+		ui: { tab: "tools", label: "Enable AST-grep", description: "Enable ast-grep for structural code search" },
+	},
+	"astgrep.defaultLimit": {
+		type: "number",
+		default: 100,
+		ui: {
+			tab: "tools",
+			label: "AST-grep result limit",
+			description: "Default maximum number of ast-grep results to return",
+			submenu: true,
+		},
+	},
 	"notebook.enabled": {
 		type: "boolean",
 		default: true,

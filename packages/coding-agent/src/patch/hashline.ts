@@ -2,14 +2,14 @@
  * Hashline edit mode — a line-addressable edit format using content hashes.
  *
  * Each line in a file is identified by its 1-indexed line number and a short
- * hexadecimal hash derived from the normalized line content (xxHash32, truncated to 2
- * hex chars).
+ * hexadecimal hash derived from the normalized line content (xxHash32, truncated to
+ * {@link HASH_LEN} hex chars).
  * The combined `LINE#ID` reference acts as both an address and a staleness check:
  * if the file has changed since the caller last read it, hash mismatches are caught
  * before any mutation occurs.
  *
- * Displayed format: `LINENUM#HASH:CONTENT`
- * Reference format: `"LINENUM#HASH"` (e.g. `"5#aa"`)
+ * Displayed format: `LINENUM#HASH|CONTENT`
+ * Reference format: `"LINENUM#HASH"` (e.g. `"5#a1b2c3"`)
  */
 
 import type { HashMismatch } from "./types";
@@ -175,13 +175,8 @@ function stripRangeBoundaryEcho(fileLines: string[], startLine: number, endLine:
 	return out;
 }
 
-const NIBBLE_STR = "ZPMQVRWSNKTXJBYH";
-
-const DICT = Array.from({ length: 256 }, (_, i) => {
-	const h = i >>> 4;
-	const l = i & 0x0f;
-	return `${NIBBLE_STR[h]}${NIBBLE_STR[l]}`;
-});
+/** Number of hex characters in a hashline hash */
+const HASH_LEN = 6;
 
 /**
  * Compute a short hexadecimal hash of a single line.
@@ -197,7 +192,8 @@ export function computeLineHash(idx: number, line: string): string {
 	}
 	line = line.replace(/\s+/g, "");
 	void idx; // Might use line, but for now, let's not.
-	return DICT[Bun.hash.xxHash32(line) & 0xff];
+	const hash = Bun.hash.xxHash32(line) & 0xffffff;
+	return hash.toString(16).padStart(HASH_LEN, "0");
 }
 
 /**
@@ -227,7 +223,7 @@ export function formatHashLines(content: string, startLine = 1): string {
 	return lines
 		.map((line, i) => {
 			const num = startLine + i;
-			return `${formatLineTag(num, line)}:${line}`;
+			return `${formatLineTag(num, line)}|${line}`;
 		})
 		.join("\n");
 }
@@ -299,7 +295,7 @@ export async function* streamHashLinesFromUtf8(
 	};
 
 	const pushLine = (line: string): string[] => {
-		const formatted = `${lineNum}#${computeLineHash(lineNum, line)}:${line}`;
+		const formatted = `${lineNum}#${computeLineHash(lineNum, line)}|${line}`;
 		lineNum++;
 
 		const chunksToYield: string[] = [];
@@ -393,7 +389,7 @@ export async function* streamHashLinesFromLines(
 
 	const pushLine = (line: string): string[] => {
 		sawAnyLine = true;
-		const formatted = `${lineNum}#${computeLineHash(lineNum, line)}:${line}`;
+		const formatted = `${lineNum}#${computeLineHash(lineNum, line)}|${line}`;
 		lineNum++;
 
 		const chunksToYield: string[] = [];
@@ -454,11 +450,11 @@ export function parseTag(ref: string): { line: number; hash: string } {
 	//  1. optional leading ">+" and whitespace
 	//  2. line number (1+ digits)
 	//  3. "#" with optional surrounding spaces
-	//  4. hash (2 hex chars)
-	//  5. optional trailing display suffix (":..." or "  ...")
-	const match = ref.match(/^\s*[>+-]*\s*(\d+)\s*#\s*([ZPMQVRWSNKTXJBYH]{2})/);
+	//  4. hash (6 hex chars)
+	//  5. optional trailing display suffix ("|..." or "  ...")
+	const match = ref.match(/^\s*[>+-]*\s*(\d+)\s*#\s*([0-9a-f]{6})/);
 	if (!match) {
-		throw new Error(`Invalid line reference "${ref}". Expected format "LINE#ID" (e.g. "5#aa").`);
+		throw new Error(`Invalid line reference "${ref}". Expected format "LINE#ID" (e.g. "5#a1b2c3").`);
 	}
 	const line = Number.parseInt(match[1], 10);
 	if (line < 1) {
@@ -533,9 +529,9 @@ export class HashlineMismatchError extends Error {
 			const prefix = `${lineNum}#${hash}`;
 
 			if (mismatchSet.has(lineNum)) {
-				lines.push(`>>> ${prefix}:${content}`);
+				lines.push(`>>> ${prefix}|${content}`);
 			} else {
-				lines.push(`    ${prefix}:${content}`);
+				lines.push(`    ${prefix}|${content}`);
 			}
 		}
 		return lines.join("\n");

@@ -136,8 +136,8 @@ const patchEditSchema = Type.Object({
 export type ReplaceParams = Static<typeof replaceEditSchema>;
 export type PatchParams = Static<typeof patchEditSchema>;
 
-/** Pattern matching hashline display format: `LINE#ID:CONTENT` */
-const HASHLINE_PREFIX_RE = /^\s*(?:>>>|>>)?\s*\d+#[0-9a-zA-Z]{1,16}:/;
+/** Pattern matching hashline display format: `LINE#ID|CONTENT` */
+const HASHLINE_PREFIX_RE = /^\s*(?:>>>|>>)?\s*\d+#[0-9a-f]{1,16}\|/;
 
 /** Pattern matching a unified-diff `+` prefix (but not `++`) */
 const DIFF_PLUS_RE = /^[+-](?![+-])/;
