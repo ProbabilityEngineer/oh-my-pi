@@ -620,14 +620,15 @@ export class AgentSession {
 				}
 				// Handle partial re-read for hashline mismatch
 				if (toolName === "edit" && details?.affectedRanges && isError) {
-					logger.debug("Partial re-read triggered", { path: details.path, ranges: details.affectedRanges });
-					// TODO: Implement auto-re-read with affected ranges
-				}
+					const path = details.path ?? "unknown";
+					const rangesText = details.affectedRanges.map(r => `lines ${r.start}-${r.end}`).join(", ");
 
-				// Handle partial re-read for hashline mismatch
-				if (toolName === "edit" && details?.affectedRanges && isError) {
-					logger.debug("Partial re-read triggered", { path: details.path, ranges: details.affectedRanges });
-					// TODO: Implement auto-re-read with affected ranges
+					// Steer a user message to prompt re-read
+					this.agent.steer({
+						role: "user",
+						content: `Please re-read the file at **${path}** for the following affected ranges: ${rangesText}. This will update the file state for the next edit attempt.`,
+						timestamp: Date.now(),
+					});
 				}
 
 				if (toolName === "todo_write" && isError) {
