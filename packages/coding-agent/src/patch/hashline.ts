@@ -15,6 +15,8 @@
 import type { HashMismatch, HashMismatchRange } from "./types";
 
 export type LineTag = { line: number; hash: string };
+export type Anchor = LineTag;
+
 export type HashlineEdit =
 	| { op: "replace"; tag: LineTag; content: string[] }
 	| { op: "replace"; first: LineTag; last: LineTag; content: string[] }

@@ -231,20 +231,20 @@ function resolveEditAnchors(edits: HashlineToolEdit[]): HashlineEdit[] {
 		switch (op) {
 			case "replace": {
 				if (tag && end) {
-					result.push({ op: "replace", pos: tag, end, lines });
+					result.push({ op: "replace", first: tag, last: end, lines });
 				} else if (tag || end) {
-					result.push({ op: "replace", pos: tag || end!, lines });
+					result.push({ op: "replace", tag: tag || end!, lines });
 				} else {
 					throw new Error("Replace requires at least one anchor (tag or end).");
 				}
 				break;
 			}
 			case "append": {
-				result.push({ op: "append", pos: tag ?? end, lines });
+				result.push({ op: "append", after: tag ?? end, lines });
 				break;
 			}
 			case "prepend": {
-				result.push({ op: "prepend", pos: end ?? tag, lines });
+				result.push({ op: "prepend", before: end ?? tag, lines });
 				break;
 			}
 		}
