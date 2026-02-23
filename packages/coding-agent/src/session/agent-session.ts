@@ -350,6 +350,9 @@ export class AgentSession {
 	#pythonAbortController: AbortController | undefined = undefined;
 	#pendingPythonMessages: PythonExecutionMessage[] = [];
 
+	// Todo state (in-memory, migrated from todos.json in v13.0.0)
+	#todoPhases: TodoPhase[] = [];
+
 	// Extension system
 	#extensionRunner: ExtensionRunner | undefined = undefined;
 	#turnIndex = 0;
@@ -4868,5 +4871,34 @@ Be thorough - include exact file paths, function names, error messages, and tech
 			await this.#extensionRunner.emit({ type: "session_shutdown" });
 		}
 		await cleanupSshResources();
+	}
+
+	/**
+	 * Get current todo phases from in-memory session cache.
+	 * @returns Cloned array of todo phases
+	 */
+	getTodoPhases(): TodoPhase[] {
+		return this.#cloneTodoPhases(this.#todoPhases);
+	}
+
+	/**
+	 * Set todo phases in in-memory session cache.
+	 * @param phases New todo phases
+	 */
+	setTodoPhases(phases: TodoPhase[]): void {
+		this.#todoPhases = this.#cloneTodoPhases(phases);
+	}
+
+	#cloneTodoPhases(phases: TodoPhase[]): TodoPhase[] {
+		return phases.map(phase => ({
+			id: phase.id,
+			name: phase.name,
+			tasks: phase.tasks.map(task => ({
+				id: task.id,
+				content: task.content,
+				status: task.status,
+				notes: task.notes,
+			})),
+		}));
 	}
 }
