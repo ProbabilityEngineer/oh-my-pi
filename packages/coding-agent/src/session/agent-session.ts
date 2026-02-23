@@ -1517,12 +1517,14 @@ export class AgentSession {
 		return this.#planModeState;
 	}
 
-
 	/**
 	 * Get a snapshot of async job state for UI display.
 	 * @returns Snapshot with running and recent jobs, or null if async jobs disabled
 	 */
-	getAsyncJobSnapshot(options?: { recentLimit?: number }): { running: Array<{ id: string; type: string; status: string; label: string; startTime: number }>; recent: Array<{ id: string; type: string; status: string; label: string; startTime: number }> } | null {
+	getAsyncJobSnapshot(options?: { recentLimit?: number }): {
+		running: Array<{ id: string; type: string; status: string; label: string; startTime: number }>;
+		recent: Array<{ id: string; type: string; status: string; label: string; startTime: number }>;
+	} | null {
 		if (!this.#asyncJobManager) return null;
 		const running = this.#asyncJobManager.getRunningJobs().map(job => ({
 			id: job.id,
