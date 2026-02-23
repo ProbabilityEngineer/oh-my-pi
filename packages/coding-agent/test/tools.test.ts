@@ -493,7 +493,7 @@ function b() {
 
 			const output = getTextOutput(result);
 			expect(output).toContain("1. example.txt:2");
-			expect(output).toMatch(/>>\s*2#[ZPMQVRWSNKTXJBYH]{2}:match line/);
+			expect(output).toMatch(/>>\s*2#[0-9a-f]{6}:match line/);
 		});
 
 		it("should respect global limit and include context lines", async () => {
@@ -511,9 +511,9 @@ function b() {
 
 			const output = getTextOutput(result);
 			expect(output).toContain("1. context.txt:2");
-			expect(output).toMatch(/\b1#[ZPMQVRWSNKTXJBYH]{2}:before/);
-			expect(output).toMatch(/>>\s*2#[ZPMQVRWSNKTXJBYH]{2}:match one/);
-			expect(output).toMatch(/\b3#[ZPMQVRWSNKTXJBYH]{2}:after/);
+			expect(output).toMatch(/\b1#[0-9a-f]{6}:before/);
+			expect(output).toMatch(/>>\s*2#[0-9a-f]{6}:match one/);
+			expect(output).toMatch(/\b3#[0-9a-f]{6}:after/);
 			expect(output).toContain("[1 matches limit reached. Use limit=2 for more]");
 			// Ensure second match is not present
 			expect(output).not.toContain("match two");
