@@ -209,6 +209,11 @@ export interface HashMismatch {
 	/** Hash computed from the current file content */
 	actual: string;
 }
+/** A contiguous range of lines affected by hash mismatches */
+export interface HashMismatchRange {
+	start: number; // 1-indexed line where range starts
+	end: number; // 1-indexed line where range ends
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Error Classes

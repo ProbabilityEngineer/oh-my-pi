@@ -12,7 +12,7 @@
  * Reference format: `"LINENUM#HASH"` (e.g. `"5#a1b2c3"`)
  */
 
-import type { HashMismatch } from "./types";
+import type { HashMismatch, HashMismatchRange } from "./types";
 
 export type LineTag = { line: number; hash: string };
 export type HashlineEdit =
@@ -465,8 +465,6 @@ export function parseTag(ref: string): { line: number; hash: string } {
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Hash Mismatch Error
-// ═══════════════════════════════════════════════════════════════════════════
-
 /** Number of context lines shown above/below each mismatched line */
 const MISMATCH_CONTEXT = 2;
 
@@ -478,6 +476,9 @@ const MISMATCH_CONTEXT = 2;
  */
 export class HashlineMismatchError extends Error {
 	readonly remaps: ReadonlyMap<string, string>;
+	/** Linear ranges of affected lines (1-indexed, inclusive) */
+	readonly affectedRanges: HashMismatchRange[];
+
 	constructor(
 		public readonly mismatches: HashMismatch[],
 		public readonly fileLines: string[],
@@ -490,6 +491,9 @@ export class HashlineMismatchError extends Error {
 			remaps.set(`${m.line}#${m.expected}`, `${m.line}#${actual}`);
 		}
 		this.remaps = remaps;
+
+		// Compute affected ranges from mismatched lines
+		this.affectedRanges = compactLineRanges(mismatches.map(m => m.line));
 	}
 
 	static formatMessage(mismatches: HashMismatch[], fileLines: string[]): string {
@@ -954,4 +958,35 @@ export function applyHashlineEdits(
 
 		return null;
 	}
+}
+
+/**
+ * Compact an array of line numbers into contiguous ranges.
+ * E.g., [1, 2, 3, 5, 6, 10] -> [{ start: 1, end: 3 }, { start: 5, end: 6 }, { start: 10, end: 10 }]
+ */
+function compactLineRanges(lines: number[]): HashMismatchRange[] {
+	if (lines.length === 0) return [];
+
+	const sorted = [...lines].sort((a, b) => a - b);
+	const ranges: HashMismatchRange[] = [];
+
+	let start = sorted[0];
+	let end = sorted[0];
+
+	for (let i = 1; i < sorted.length; i++) {
+		const line = sorted[i];
+		if (line === end + 1) {
+			// Continue current range
+			end = line;
+		} else {
+			// Close current range and start new one
+			ranges.push({ start, end });
+			start = line;
+			end = line;
+		}
+	}
+
+	// Close final range
+	ranges.push({ start, end });
+	return ranges;
 }
