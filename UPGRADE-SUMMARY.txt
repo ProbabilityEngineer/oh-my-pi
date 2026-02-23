@@ -1,0 +1,58 @@
+================================================================================
+UPGRADE ANALYSIS SUMMARY: v12.18.3 → v13.1.2
+================================================================================
+
+DIFFICULTY: MEDIUM-HIGH (4-8 hours)
+RECOMMENDATION: PROCEED WITH MERGE - your features are worth preserving
+
+YOUR UNIQUE FEATURES (MUST KEEP):
+✅ ast-grep structural search tool - NOT in upstream
+✅ read tool ranges parameter - NOT in upstream  
+✅ Enhanced hashline (6-char hash, pipe separator, auto-re-read) - BETTER than upstream
+
+CONFLICT RISK:
+🔴 HIGH: hashline.ts (both made major changes)
+🟡 MEDIUM: read.ts, tools/index.ts, sdk.ts
+🟢 LOW: prompt files, await-tool rename
+
+BREAKING CHANGES TO ADOPT:
+- await tool: removed timeout, renamed job_ids→jobs
+- Edit ops: renamed file→path parameter
+- Todo: moved from todos.json to in-memory cache
+- Protocol: docs:// → pi://
+- Bash: removed virtualTerminal setting → use pty parameter
+
+KEY FILES TO REVIEW:
+1. packages/coding-agent/src/patch/hashline.ts (CRITICAL)
+2. packages/coding-agent/src/tools/read.ts (HIGH)
+3. packages/coding-agent/src/tools/index.ts (MEDIUM)
+4. packages/coding-agent/src/sdk.ts (MEDIUM)
+
+MERGE STRATEGY:
+1. Create backup branch
+2. git merge upstream/v13.1.2
+3. Resolve hashline.ts first (hardest part)
+4. Add local ranges to read.ts
+5. Fix tool exports
+6. Test incrementally
+
+DELIVERABLES CREATED:
+✅ upgrade-analysis.json - Detailed technical analysis (11KB)
+✅ upgrade.json - Executive summary with action items (8KB)
+✅ UPGRADE-PLAN.md - Step-by-step merge guide (8KB)
+✅ UPGRADE-SUMMARY.txt - This file
+
+NEXT STEPS:
+1. Read upgrade.json for full breakdown
+2. Review UPGRADE-PLAN.md for detailed instructions
+3. Decide: merge now or schedule dedicated session
+4. If merging: start with "git checkout -b backup-before-v13-upgrade"
+
+BOTTOM LINE:
+Your fork has valuable features upstream doesn't have. Merge is non-trivial
+but absolutely worth the effort. Hashline.ts is the hardest part - everything
+else is straightforward.
+
+Questions? Review the detailed files or ask for clarification on specific
+conflicts.
+================================================================================

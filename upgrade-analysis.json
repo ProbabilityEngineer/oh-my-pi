@@ -1,0 +1,325 @@
+{
+  "analysis": {
+    "currentVersion": "v12.18.3-25-ge757c7b0",
+    "targetVersion": "v13.1.2",
+    "upstreamCommits": 81,
+    "localCommits": 18,
+    "analysisDate": "2026-02-23"
+  },
+  "localFeatures": {
+    "major": [
+      {
+        "name": "ast-grep tool",
+        "commits": ["36890385", "efa47280", "b191d204", "5acba4e2"],
+        "files": [
+          "packages/coding-agent/src/tools/ast-grep.ts",
+          "packages/coding-agent/src/ast-grep/index.ts",
+          "packages/coding-agent/src/prompts/tools/ast-grep.md"
+        ],
+        "description": "Structural code search using AST pattern matching",
+        "upstreamStatus": "NOT in upstream - unique feature",
+        "conflictRisk": "LOW - new file, no upstream equivalent"
+      },
+      {
+        "name": "ranges parameter in read tool",
+        "commits": ["74adbf9d", "34a8442a", "74f30698", "28d09f24"],
+        "files": ["packages/coding-agent/src/tools/read.ts"],
+        "description": "Read specific line ranges from files with auto-re-read on hash mismatch",
+        "upstreamStatus": "NOT in upstream - unique feature",
+        "conflictRisk": "MEDIUM - read.ts has upstream changes but ranges is additive"
+      },
+      {
+        "name": "hashline format improvements",
+        "commits": ["598ca2ee", "5de82d96", "5e8f47c8", "957c1473"],
+        "files": [
+          "packages/coding-agent/src/patch/hashline.ts",
+          "packages/coding-agent/src/patch/shared.ts"
+        ],
+        "description": "6-char hex hashes, pipe separator, partial re-read on hash mismatch",
+        "upstreamStatus": "PARTIAL - upstream has hashline changes but different format",
+        "conflictRisk": "HIGH - both made significant hashline changes"
+      }
+    ],
+    "minor": [
+      {
+        "name": "Documentation updates",
+        "commits": ["17a38bd7", "056314e9", "cb3e4c70"],
+        "description": "Session handoff, backport guides, upstream PR docs",
+        "upstreamStatus": "Local only",
+        "conflictRisk": "LOW"
+      }
+    ]
+  },
+  "upstreamChanges": {
+    "breaking": [
+      {
+        "version": "v13.1.2",
+        "change": "Removed timeout parameter from await tool",
+        "impact": "await tool now waits indefinitely",
+        "migrationEffort": "LOW - parameter removal only"
+      },
+      {
+        "version": "v13.1.0",
+        "change": "Renamed job_ids to jobs in await tool",
+        "impact": "Parameter name change",
+        "migrationEffort": "LOW - simple rename"
+      },
+      {
+        "version": "v13.0.0",
+        "change": "Changed todo state from file-based to in-memory",
+        "impact": "todos.json no longer written, uses session cache",
+        "migrationEffort": "MEDIUM - behavioral change"
+      },
+      {
+        "version": "v13.0.0",
+        "change": "Replaced docs:// with pi:// protocol",
+        "impact": "Internal URL scheme change",
+        "migrationEffort": "LOW - systematic rename"
+      },
+      {
+        "version": "v12.19.3",
+        "change": "Removed bash.virtualTerminal setting",
+        "impact": "Use pty parameter per-command instead",
+        "migrationEffort": "LOW - config change"
+      },
+      {
+        "version": "v12.19.1",
+        "change": "Removed replaceText edit operation from hashline",
+        "impact": "Hashline no longer supports substring replacement",
+        "migrationEffort": "MEDIUM - affects hashline workflow"
+      }
+    ],
+    "major": [
+      {
+        "change": "Added local:// protocol for session-scoped storage",
+        "version": "v13.0.0",
+        "files": ["packages/coding-agent/src/internal-urls/local-protocol.ts"],
+        "integrationEffort": "LOW - additive feature"
+      },
+      {
+        "change": "Added async background job execution",
+        "version": "v12.19.0",
+        "files": [
+          "packages/coding-agent/src/async/job-manager.ts",
+          "packages/coding-agent/src/tools/await-tool.ts",
+          "packages/coding-agent/src/tools/cancel-job.ts"
+        ],
+        "integrationEffort": "MEDIUM - new subsystem"
+      },
+      {
+        "change": "GitLab Duo provider support",
+        "version": "v12.19.0",
+        "files": ["packages/ai/src/providers/gitlab-duo.ts"],
+        "integrationEffort": "LOW - additive provider"
+      },
+      {
+        "change": "In-memory todo phase management",
+        "version": "v13.0.0",
+        "files": ["packages/coding-agent/src/tools/todo-write.ts"],
+        "integrationEffort": "MEDIUM - API change"
+      }
+    ]
+  },
+  "conflictAnalysis": {
+    "highRisk": [
+      {
+        "file": "packages/coding-agent/src/patch/hashline.ts",
+        "reason": "Both local and upstream made significant changes",
+        "localChanges": "6-char hex, pipe separator, partial re-read, auto-re-read",
+        "upstreamChanges": "Simplified operations, removed replaceText, unified anchors",
+        "resolution": "Manual merge required - preserve local features while adopting upstream simplifications"
+      },
+      {
+        "file": "packages/coding-agent/src/tools/read.ts",
+        "reason": "Local added ranges parameter, upstream made other changes",
+        "localChanges": "ranges parameter, #readRanges method, auto-re-read",
+        "upstreamChanges": "Internal URL handling, truncation improvements",
+        "resolution": "Merge local ranges into upstream version - should be additive"
+      }
+    ],
+    "mediumRisk": [
+      {
+        "file": "packages/coding-agent/src/tools/index.ts",
+        "reason": "Tool exports reorganization",
+        "localChanges": "AstGrepTool export, removed async job exports",
+        "upstreamChanges": "Renamed poll_jobs to await, schema changes",
+        "resolution": "Add ast-grep export to upstream structure"
+      },
+      {
+        "file": "packages/coding-agent/src/sdk.ts",
+        "reason": "ToolSession interface changes",
+        "localChanges": "May have local modifications",
+        "upstreamChanges": "In-memory todo, artifact manager changes",
+        "resolution": "Compare and merge interface definitions"
+      }
+    ],
+    "lowRisk": [
+      {
+        "file": "packages/coding-agent/src/tools/await-tool.ts",
+        "reason": "Upstream renamed from poll-jobs",
+        "resolution": "Adopt upstream rename, check if local has modifications"
+      },
+      {
+        "file": "packages/coding-agent/src/prompts/tools/*.md",
+        "reason": "Upstream restructured tool docs",
+        "resolution": "Merge local ast-grep.md into new structure"
+      }
+    ]
+  },
+  "upgradeStrategy": {
+    "recommended": "MERGE with careful conflict resolution",
+    "approach": "Create merge branch, resolve conflicts per-file, test incrementally",
+    "steps": [
+      {
+        "step": 1,
+        "action": "Create backup branch",
+        "command": "git checkout -b backup-before-v13-upgrade"
+      },
+      {
+        "step": 2,
+        "action": "Fetch and merge upstream v13.1.2",
+        "command": "git merge upstream/v13.1.2"
+      },
+      {
+        "step": 3,
+        "action": "Resolve high-risk conflicts",
+        "files": [
+          "packages/coding-agent/src/patch/hashline.ts",
+          "packages/coding-agent/src/tools/read.ts"
+        ],
+        "notes": "Preserve local features: ast-grep, ranges, 6-char hash, auto-re-read"
+      },
+      {
+        "step": 4,
+        "action": "Resolve medium-risk conflicts",
+        "files": [
+          "packages/coding-agent/src/tools/index.ts",
+          "packages/coding-agent/src/sdk.ts"
+        ]
+      },
+      {
+        "step": 5,
+        "action": "Accept upstream changes for low-risk files",
+        "notes": "Tool prompt restructuring, await rename"
+      },
+      {
+        "step": 6,
+        "action": "Run type check",
+        "command": "bun check:ts"
+      },
+      {
+        "step": 7,
+        "action": "Run tests",
+        "command": "bun test test/core/hashline.test.ts test/tools.test.ts"
+      },
+      {
+        "step": 8,
+        "action": "Manual testing",
+        "scenarios": [
+          "ast-grep search",
+          "read with ranges",
+          "hashline edits with 6-char hash",
+          "auto-re-read on hash mismatch"
+        ]
+      }
+    ],
+    "estimatedEffort": "4-8 hours",
+    "riskLevel": "MEDIUM-HIGH"
+  },
+  "featuresToPreserve": [
+    {
+      "feature": "ast-grep structural search",
+      "priority": "HIGH",
+      "files": [
+        "packages/coding-agent/src/tools/ast-grep.ts",
+        "packages/coding-agent/src/ast-grep/"
+      ],
+      "tests": ["test/tools/ast-grep.test.ts"]
+    },
+    {
+      "feature": "read tool ranges parameter",
+      "priority": "HIGH",
+      "files": ["packages/coding-agent/src/tools/read.ts"],
+      "behavior": "Read specific line ranges, auto-re-read on partial match"
+    },
+    {
+      "feature": "6-char hex hash format",
+      "priority": "HIGH",
+      "files": ["packages/coding-agent/src/patch/hashline.ts"],
+      "behavior": "Longer hashes for better collision resistance"
+    },
+    {
+      "feature": "pipe separator in hashlines",
+      "priority": "MEDIUM",
+      "files": ["packages/coding-agent/src/patch/hashline.ts"],
+      "behavior": "LINENUM#HASH|CONTENT format"
+    },
+    {
+      "feature": "auto-re-read on hash mismatch",
+      "priority": "HIGH",
+      "files": [
+        "packages/coding-agent/src/patch/hashline.ts",
+        "packages/coding-agent/src/tools/edit.ts"
+      ],
+      "behavior": "Automatically re-read file when hash doesn't match"
+    }
+  ],
+  "upstreamFeaturesToAdopt": [
+    {
+      "feature": "local:// protocol",
+      "benefit": "Session-scoped temporary storage",
+      "priority": "MEDIUM"
+    },
+    {
+      "feature": "async background jobs",
+      "benefit": "Parallel execution with poll_jobs",
+      "priority": "MEDIUM",
+      "note": "Check if conflicts with local architecture"
+    },
+    {
+      "feature": "GitLab Duo provider",
+      "benefit": "Additional LLM provider support",
+      "priority": "LOW"
+    },
+    {
+      "feature": "pty per-command control",
+      "benefit": "Better bash terminal handling",
+      "priority": "LOW"
+    }
+  ],
+  "beadsToCreate": [
+    {
+      "title": "Merge upstream v13.1.2 - hashline.ts conflict resolution",
+      "description": "Resolve conflicts in hashline.ts preserving 6-char hash, pipe separator, auto-re-read",
+      "priority": "HIGH",
+      "labels": ["upgrade", "merge-conflict"]
+    },
+    {
+      "title": "Merge upstream v13.1.2 - read.ts ranges integration",
+      "description": "Integrate ranges parameter into upstream read.ts changes",
+      "priority": "HIGH",
+      "labels": ["upgrade", "merge-conflict"]
+    },
+    {
+      "title": "Verify ast-grep tool after merge",
+      "description": "Test ast-grep functionality post-upgrade",
+      "priority": "MEDIUM",
+      "labels": ["upgrade", "testing"]
+    },
+    {
+      "title": "Update documentation for v13 features",
+      "description": "Document local features alongside upstream changes",
+      "priority": "LOW",
+      "labels": ["documentation", "upgrade"]
+    }
+  ],
+  "recommendations": [
+    "Create git worktree for merge to isolate from current work",
+    "File beads for each major conflict before starting merge",
+    "Test each local feature individually after merge",
+    "Consider adopting upstream async job system if compatible",
+    "Preserve all local features - they provide significant value",
+    "Run full test suite before considering merge complete",
+    "Create upgrade.md documenting the merge process for future reference"
+  ]
+}

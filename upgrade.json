@@ -1,0 +1,283 @@
+{
+  "version": "1.0.0",
+  "generated": "2026-02-23",
+  "summary": {
+    "currentVersion": "v12.18.3-25-ge757c7b0",
+    "targetVersion": "v13.1.2",
+    "upstreamCommits": 81,
+    "localCommits": 18,
+    "difficulty": "MEDIUM-HIGH",
+    "estimatedHours": "4-8",
+    "recommendation": "PROCEED_WITH_MERGE"
+  },
+  "localFeatures": {
+    "mustPreserve": [
+      {
+        "id": "ast-grep",
+        "name": "AST-grep Structural Search Tool",
+        "priority": "HIGH",
+        "status": "UNIQUE_TO_FORK",
+        "files": [
+          "packages/coding-agent/src/tools/ast-grep.ts",
+          "packages/coding-agent/src/ast-grep/"
+        ],
+        "conflictRisk": "LOW",
+        "action": "KEEP_AS_IS"
+      },
+      {
+        "id": "read-ranges",
+        "name": "Read Tool Ranges Parameter",
+        "priority": "HIGH",
+        "status": "UNIQUE_TO_FORK",
+        "files": [
+          "packages/coding-agent/src/tools/read.ts"
+        ],
+        "conflictRisk": "MEDIUM",
+        "action": "MERGE_INTO_UPSTREAM"
+      },
+      {
+        "id": "hashline-enhanced",
+        "name": "Enhanced Hashline Format",
+        "priority": "HIGH",
+        "status": "PARTIAL_OVERLAP",
+        "files": [
+          "packages/coding-agent/src/patch/hashline.ts",
+          "packages/coding-agent/src/patch/shared.ts"
+        ],
+        "features": [
+          "6-char hex hashes (upstream: 2-char)",
+          "Pipe separator | (upstream: colon :)",
+          "Auto-re-read on hash mismatch",
+          "Partial re-read workflow",
+          "Advanced merge detection"
+        ],
+        "conflictRisk": "HIGH",
+        "action": "MANUAL_MERGE_PRESERVE_LOCAL"
+      }
+    ]
+  },
+  "upstreamBreakingChanges": [
+    {
+      "version": "v13.1.2",
+      "change": "Removed timeout from await tool",
+      "impact": "LOW",
+      "action": "ADOPT"
+    },
+    {
+      "version": "v13.1.0",
+      "change": "Renamed file → path in edit operations",
+      "impact": "LOW",
+      "action": "ADOPT"
+    },
+    {
+      "version": "v13.0.0",
+      "change": "Todo state moved to in-memory cache",
+      "impact": "MEDIUM",
+      "action": "ADOPT"
+    },
+    {
+      "version": "v13.0.0",
+      "change": "docs:// → pi:// protocol",
+      "impact": "LOW",
+      "action": "ADOPT"
+    },
+    {
+      "version": "v12.19.3",
+      "change": "Removed bash.virtualTerminal setting",
+      "impact": "LOW",
+      "action": "ADOPT"
+    },
+    {
+      "version": "v12.19.1",
+      "change": "Removed replaceText from hashline",
+      "impact": "MEDIUM",
+      "action": "ADOPT"
+    }
+  ],
+  "conflicts": {
+    "high": [
+      {
+        "file": "packages/coding-agent/src/patch/hashline.ts",
+        "reason": "Both made significant changes",
+        "resolution": "Manual merge - preserve local 6-char hash, pipe separator, auto-re-read while adopting upstream simplifications"
+      }
+    ],
+    "medium": [
+      {
+        "file": "packages/coding-agent/src/tools/read.ts",
+        "reason": "Local ranges parameter vs upstream changes",
+        "resolution": "Add local ranges to upstream version"
+      },
+      {
+        "file": "packages/coding-agent/src/tools/index.ts",
+        "reason": "Tool exports reorganization",
+        "resolution": "Ensure ast-grep export present"
+      },
+      {
+        "file": "packages/coding-agent/src/sdk.ts",
+        "reason": "ToolSession interface changes",
+        "resolution": "Merge interface definitions"
+      }
+    ],
+    "low": [
+      {
+        "file": "packages/coding-agent/src/tools/await-tool.ts",
+        "reason": "Renamed from poll-jobs",
+        "resolution": "Adopt upstream rename"
+      },
+      {
+        "file": "packages/coding-agent/src/prompts/tools/*.md",
+        "reason": "Restructured documentation",
+        "resolution": "Merge ast-grep.md into new structure"
+      }
+    ]
+  },
+  "steps": [
+    {
+      "order": 1,
+      "action": "Create backup branch",
+      "command": "git checkout -b backup-before-v13-upgrade",
+      "estimatedMinutes": 5
+    },
+    {
+      "order": 2,
+      "action": "Create merge worktree (optional)",
+      "command": "git worktree add ../omp-merge-test -b merge-v13-upgrade",
+      "estimatedMinutes": 5
+    },
+    {
+      "order": 3,
+      "action": "Initial merge",
+      "command": "git merge upstream/v13.1.2",
+      "estimatedMinutes": 30
+    },
+    {
+      "order": 4,
+      "action": "Resolve hashline.ts conflict",
+      "files": ["packages/coding-agent/src/patch/hashline.ts"],
+      "priority": "CRITICAL",
+      "estimatedHours": 3
+    },
+    {
+      "order": 5,
+      "action": "Resolve read.ts conflict",
+      "files": ["packages/coding-agent/src/tools/read.ts"],
+      "priority": "HIGH",
+      "estimatedHours": 1
+    },
+    {
+      "order": 6,
+      "action": "Resolve index.ts and sdk.ts conflicts",
+      "files": [
+        "packages/coding-agent/src/tools/index.ts",
+        "packages/coding-agent/src/sdk.ts"
+      ],
+      "priority": "MEDIUM",
+      "estimatedHours": 1
+    },
+    {
+      "order": 7,
+      "action": "Accept upstream changes for low-risk files",
+      "estimatedMinutes": 30
+    },
+    {
+      "order": 8,
+      "action": "Type check",
+      "command": "bun check:ts",
+      "estimatedMinutes": 15
+    },
+    {
+      "order": 9,
+      "action": "Run tests",
+      "command": "bun test test/core/hashline.test.ts test/tools.test.ts",
+      "estimatedMinutes": 30
+    },
+    {
+      "order": 10,
+      "action": "Manual feature testing",
+      "scenarios": [
+        "ast-grep search",
+        "read with ranges",
+        "hashline edits with 6-char hash",
+        "auto-re-read on hash mismatch"
+      ],
+      "estimatedMinutes": 60
+    }
+  ],
+  "upstreamFeaturesToConsider": [
+    {
+      "name": "local:// protocol",
+      "benefit": "Session-scoped temporary storage",
+      "priority": "MEDIUM",
+      "adopt": "RECOMMENDED"
+    },
+    {
+      "name": "Async background jobs",
+      "benefit": "Parallel execution with poll_jobs",
+      "priority": "MEDIUM",
+      "adopt": "EVALUATE_COMPATIBILITY"
+    },
+    {
+      "name": "GitLab Duo provider",
+      "benefit": "Additional LLM provider",
+      "priority": "LOW",
+      "adopt": "OPTIONAL"
+    }
+  ],
+  "testing": {
+    "localFeatures": [
+      "ast_grep tool pattern matching",
+      "read tool ranges parameter",
+      "6-char hex hash display",
+      "Pipe separator in hashline format",
+      "Auto-re-read on hash mismatch",
+      "Partial re-read workflow"
+    ],
+    "upstreamAdoption": [
+      "await tool (renamed from poll-jobs)",
+      "local:// URL resolution",
+      "In-memory todo persistence",
+      "pi:// documentation URLs",
+      "Bash pty parameter"
+    ],
+    "regression": [
+      "All existing tests pass",
+      "No TypeScript errors",
+      "Interactive mode renders",
+      "Tool calls execute"
+    ]
+  },
+  "risks": [
+    {
+      "risk": "Hashline merge complexity",
+      "mitigation": "Start with upstream version, surgically insert local features",
+      "severity": "HIGH"
+    },
+    {
+      "risk": "Breaking changes in tool APIs",
+      "mitigation": "Update all references during merge",
+      "severity": "MEDIUM"
+    },
+    {
+      "risk": "Todo system migration issues",
+      "mitigation": "Test todo persistence thoroughly after merge",
+      "severity": "MEDIUM"
+    }
+  ],
+  "rollback": {
+    "command": "git checkout backup-before-v13-upgrade",
+    "notes": "All work preserved in backup branch"
+  },
+  "deliverables": [
+    "upgrade-analysis.json - Detailed conflict analysis",
+    "UPGRADE-PLAN.md - Step-by-step merge guide",
+    "upgrade.json - This summary file"
+  ],
+  "nextActions": [
+    "Review upgrade-analysis.json for detailed conflict breakdown",
+    "Read UPGRADE-PLAN.md for merge strategy",
+    "Create beads for high-priority conflicts",
+    "Decide: proceed with merge now or schedule dedicated session",
+    "If proceeding: create backup branch and worktree first"
+  ]
+}
