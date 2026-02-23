@@ -20,9 +20,9 @@ function makeTag(line: number, content: string): LineTag {
 // ═══════════════════════════════════════════════════════════════════════════
 
 describe("computeLineHash", () => {
-	it("returns 2-4 character alphanumeric hash string", () => {
+	it("returns 6 character lowercase hex hash string", () => {
 		const hash = computeLineHash(1, "hello");
-		expect(hash).toMatch(/^[ZPMQVRWSNKTXJBYH]{2}$/);
+		expect(hash).toMatch(/^[0-9a-f]{6}$/);
 	});
 
 	it("same content at same line produces same hash", () => {
@@ -39,7 +39,7 @@ describe("computeLineHash", () => {
 
 	it("empty line produces valid hash", () => {
 		const hash = computeLineHash(1, "");
-		expect(hash).toMatch(/^[ZPMQVRWSNKTXJBYH]{2}$/);
+		expect(hash).toMatch(/^[0-9a-f]{6}$/);
 	});
 });
 
@@ -51,7 +51,7 @@ describe("formatHashLines", () => {
 	it("formats single line", () => {
 		const result = formatHashLines("hello");
 		const hash = computeLineHash(1, "hello");
-		expect(result).toBe(`1#${hash}:hello`);
+		expect(result).toBe(`1#${hash}|hello`);
 	});
 
 	it("formats multiple lines with 1-indexed numbers", () => {
@@ -74,7 +74,7 @@ describe("formatHashLines", () => {
 		const result = formatHashLines("foo\n\nbar");
 		const lines = result.split("\n");
 		expect(lines).toHaveLength(3);
-		expect(lines[1]).toMatch(/^2#[ZPMQVRWSNKTXJBYH]{2}:$/);
+		expect(lines[1]).toMatch(/^2#[0-9a-f]{6}\|$/);
 	});
 
 	it("round-trips with computeLineHash", () => {
@@ -83,7 +83,7 @@ describe("formatHashLines", () => {
 		const lines = formatted.split("\n");
 
 		for (let i = 0; i < lines.length; i++) {
-			const match = lines[i].match(/^(\d+)#([ZPMQVRWSNKTXJBYH]{2}):(.*)$/);
+			const match = lines[i].match(/^(\d+)#([0-9a-f]{6})\|(.*)$/);
 			expect(match).not.toBeNull();
 			const lineNum = Number.parseInt(match![1], 10);
 			const hash = match![2];
@@ -152,17 +152,17 @@ describe("streamHashLinesFrom*", () => {
 
 describe("parseTag", () => {
 	it("parses valid reference", () => {
-		const ref = parseTag("5#QQ");
-		expect(ref).toEqual({ line: 5, hash: "QQ" });
+		const ref = parseTag("5#0077f9");
+		expect(ref).toEqual({ line: 5, hash: "0077f9" });
 	});
 
 	it("rejects single-character hash", () => {
 		expect(() => parseTag("1#Q")).toThrow(/Invalid line reference/);
 	});
 
-	it("parses long hash by taking strict 2-char prefix", () => {
-		const ref = parseTag("100#QQQQ");
-		expect(ref).toEqual({ line: 100, hash: "QQ" });
+	it("parses long hash by taking strict 6-char", () => {
+		const ref = parseTag("100#0077f9");
+		expect(ref).toEqual({ line: 100, hash: "0077f9" });
 	});
 
 	it("rejects missing separator", () => {
@@ -178,7 +178,7 @@ describe("parseTag", () => {
 	});
 
 	it("rejects line number 0", () => {
-		expect(() => parseTag("0#QQ")).toThrow(/Line number must be >= 1/);
+		expect(() => parseTag("0#000000")).toThrow(/Line number must be >= 1/);
 	});
 
 	it("rejects empty string", () => {
@@ -733,14 +733,14 @@ describe("applyHashlineEdits — multiple edits", () => {
 describe("applyHashlineEdits — errors", () => {
 	it("rejects stale hash", () => {
 		const content = "aaa\nbbb\nccc";
-		// Use a hash that doesn't match any line (avoid 00 — ccc hashes to 00)
-		const edits: HashlineEdit[] = [{ op: "set", tag: parseTag("2#QQ"), content: ["BBB"] }];
+		// Use a hash that doesn't match line 2
+		const edits: HashlineEdit[] = [{ op: "set", tag: parseTag("2#000000"), content: ["BBB"] }];
 		expect(() => applyHashlineEdits(content, edits)).toThrow(HashlineMismatchError);
 	});
 
 	it("stale hash error shows >>> markers with correct hashes", () => {
 		const content = "aaa\nbbb\nccc\nddd\neee";
-		const edits: HashlineEdit[] = [{ op: "set", tag: parseTag("2#QQ"), content: ["BBB"] }];
+		const edits: HashlineEdit[] = [{ op: "set", tag: parseTag("2#000000"), content: ["BBB"] }];
 
 		try {
 			applyHashlineEdits(content, edits);
@@ -752,7 +752,7 @@ describe("applyHashlineEdits — errors", () => {
 			expect(msg).toContain(">>>");
 			// Should show the correct hash for line 2
 			const correctHash = computeLineHash(2, "bbb");
-			expect(msg).toContain(`2#${correctHash}:bbb`);
+			expect(msg).toContain(`2#${correctHash}|bbb`);
 			// Context lines should NOT have >>> markers
 			const lines = msg.split("\n");
 			const contextLines = lines.filter(l => l.startsWith("    ") && !l.startsWith("    ...") && l.includes("#"));
@@ -762,10 +762,10 @@ describe("applyHashlineEdits — errors", () => {
 
 	it("stale hash error collects all mismatches", () => {
 		const content = "aaa\nbbb\nccc\nddd\neee";
-		// Use hashes that don't match any line (avoid 00 — ccc hashes to 00)
+		// Use hashes that don't match any line
 		const edits: HashlineEdit[] = [
-			{ op: "set", tag: parseTag("2#ZZ"), content: ["BBB"] },
-			{ op: "set", tag: parseTag("4#ZZ"), content: ["DDD"] },
+			{ op: "set", tag: parseTag("2#000001"), content: ["BBB"] },
+			{ op: "set", tag: parseTag("4#000002"), content: ["DDD"] },
 		];
 
 		try {
@@ -807,7 +807,7 @@ describe("applyHashlineEdits — errors", () => {
 
 	it("rejects out-of-range line", () => {
 		const content = "aaa\nbbb";
-		const edits: HashlineEdit[] = [{ op: "set", tag: parseTag("10#ZZ"), content: ["X"] }];
+		const edits: HashlineEdit[] = [{ op: "set", tag: parseTag("10#000000"), content: ["X"] }];
 
 		expect(() => applyHashlineEdits(content, edits)).toThrow(/does not exist/);
 	});
@@ -858,3 +858,271 @@ describe("applyHashlineEdits — errors", () => {
 		expect(() => applyHashlineEdits(content, edits)).toThrow(/after.*<.*before/);
 	});
 });
+// ═══════════════════════════════════════════════════════════════════════════
+// Scenario Tests for Hashline Improvements (oh-my-pi-sjw)
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe("Scenario: 6-char hash collision resistance", () => {
+	it("demonstrates 6-char hash space is significantly larger than 2-char", () => {
+		// 2-char hex: 16^2 = 256 combinations
+		// 6-char hex: 16^6 = 16,777,216 combinations
+		// This test verifies the hash length is actually 6 chars
+		const hash = computeLineHash(1, "test");
+		expect(hash).toHaveLength(6);
+		expect(hash).toMatch(/^[0-9a-f]{6}$/);
+	});
+
+	it("produces unique hashes for similar but different content", () => {
+		// Test that small changes produce different 6-char hashes
+		const lines = [
+			"const x = 1;",
+			"const x = 2;",
+			"const x = 10;",
+			"const y = 1;",
+		];
+		const hashes = lines.map((line, i) => computeLineHash(i + 1, line));
+
+		// All hashes should be unique
+		const uniqueHashes = new Set(hashes);
+		expect(uniqueHashes.size).toBe(hashes.length);
+	});
+
+	it("handles realistic code collision scenarios", () => {
+		// Simulate common code patterns that might collide
+		const patterns = [
+			"import { foo } from './foo';",
+			"import { bar } from './bar';",
+			"import { baz } from './baz';",
+			"export function test() {}",
+			"export function test2() {}",
+			"export function testing() {}",
+			"if (condition) {",
+			"if (conditions) {",
+			"if (conditioned) {",
+		];
+
+		const hashes = patterns.map((line, i) => computeLineHash(i + 1, line));
+		const uniqueHashes = new Set(hashes);
+
+		// With 6-char hashes, collision probability is extremely low
+		// Even with similar content, all should be unique
+		expect(uniqueHashes.size).toBe(patterns.length);
+	});
+
+	it("maintains hash stability across multiple invocations", () => {
+		const content = "function calculateTotal(items: Item[]): number {";
+		const lineNum = 42;
+
+		// Hash should be deterministic
+		const hash1 = computeLineHash(lineNum, content);
+		const hash2 = computeLineHash(lineNum, content);
+		const hash3 = computeLineHash(lineNum, content);
+
+		expect(hash1).toBe(hash2);
+		expect(hash2).toBe(hash3);
+		expect(hash1).toHaveLength(6);
+	});
+});
+
+describe("Scenario: Pipe separator parsing", () => {
+	it("formatHashLines uses pipe separator correctly", () => {
+		const content = "hello\nworld";
+		const formatted = formatHashLines(content);
+		const lines = formatted.split("\n");
+
+		// Each line should have format: LINENUM#HASH|CONTENT
+		lines.forEach((line, i) => {
+			const parts = line.split("|");
+			expect(parts).toHaveLength(2);
+			const [tag, content] = parts;
+			expect(tag).toMatch(/^\d+#[0-9a-f]{6}$/);
+			expect(content).toBe(i === 0 ? "hello" : "world");
+		});
+	});
+
+	it("handles content with pipe characters", () => {
+		// Content containing pipes should still parse correctly
+		const content = "const regex = /a|b/;";
+		const formatted = formatHashLines(content);
+		const lines = formatted.split("\n");
+
+		// First pipe after hash is the separator
+		const firstPipe = lines[0].indexOf("|");
+		expect(firstPipe).toBeGreaterThan(0);
+
+		// Everything after first pipe is content
+		const tag = lines[0].substring(0, firstPipe);
+		const contentPart = lines[0].substring(firstPipe + 1);
+
+		expect(tag).toMatch(/^\d+#[0-9a-f]{6}$/);
+		expect(contentPart).toBe("const regex = /a|b/;");
+	});
+
+	it("handles empty lines with pipe separator", () => {
+		const content = "line1\n\nline3";
+		const formatted = formatHashLines(content);
+		const lines = formatted.split("\n");
+
+		expect(lines).toHaveLength(3);
+		expect(lines[0]).toMatch(/^1#[0-9a-f]{6}\|line1$/);
+		expect(lines[1]).toMatch(/^2#[0-9a-f]{6}\|$/); // Empty content
+		expect(lines[2]).toMatch(/^3#[0-9a-f]{6}\|line3$/);
+	});
+
+	it("handles lines with multiple pipes", () => {
+		const content = "a|b|c|d";
+		const formatted = formatHashLines(content);
+		const lines = formatted.split("\n");
+
+		// Split on first pipe only
+		const firstPipe = lines[0].indexOf("|");
+		const tag = lines[0].substring(0, firstPipe);
+		const contentPart = lines[0].substring(firstPipe + 1);
+
+		expect(tag).toMatch(/^\d+#[0-9a-f]{6}$/);
+		expect(contentPart).toBe("a|b|c|d");
+	});
+
+	it("streamHashLinesFromLines preserves pipe separator format", async () => {
+		const lines = ["foo", "bar", "baz"];
+		const chunks: string[] = [];
+
+		for await (const chunk of streamHashLinesFromLines(lines, { maxChunkLines: 2 })) {
+			chunks.push(chunk);
+		}
+
+		const result = chunks.join("\n");
+		const resultLines = result.split("\n");
+
+		expect(resultLines).toHaveLength(3);
+		resultLines.forEach((line) => {
+			expect(line).toContain("|");
+			const [tag] = line.split("|");
+			expect(tag).toMatch(/^\d+#[0-9a-f]{6}$/);
+		});
+	});
+});
+
+describe("Scenario: Partial re-read on hash mismatch", () => {
+	it("HashlineMismatchError contains affectedRanges", () => {
+		const content = "line1\nline2\nline3\nline4\nline5";
+		const edits = [
+			{ op: "set" as const, tag: parseTag("2#000000"), content: ["NEW2"] },
+			{ op: "set" as const, tag: parseTag("4#000000"), content: ["NEW4"] },
+		];
+
+		try {
+			applyHashlineEdits(content, edits);
+			expect.unreachable("should have thrown");
+		} catch (err) {
+			expect(err).toBeInstanceOf(HashlineMismatchError);
+			const e = err as HashlineMismatchError;
+
+			// Should have 2 mismatches
+			expect(e.mismatches).toHaveLength(2);
+			expect(e.mismatches[0].line).toBe(2);
+			expect(e.mismatches[1].line).toBe(4);
+
+			// Should compute affected ranges (non-contiguous)
+			expect(e.affectedRanges).toHaveLength(2);
+			expect(e.affectedRanges[0]).toEqual({ start: 2, end: 2 });
+			expect(e.affectedRanges[1]).toEqual({ start: 4, end: 4 });
+		}
+	});
+
+	it("compacts contiguous mismatch lines into ranges", () => {
+		const content = "line1\nline2\nline3\nline4\nline5";
+		// Create mismatches on contiguous lines 2, 3, 4
+		const edits = [
+			{ op: "set" as const, tag: parseTag("2#000000"), content: ["NEW2"] },
+			{ op: "set" as const, tag: parseTag("3#000000"), content: ["NEW3"] },
+			{ op: "set" as const, tag: parseTag("4#000000"), content: ["NEW4"] },
+		];
+
+		try {
+			applyHashlineEdits(content, edits);
+			expect.unreachable("should have thrown");
+		} catch (err) {
+			expect(err).toBeInstanceOf(HashlineMismatchError);
+			const e = err as HashlineMismatchError;
+
+			// 3 mismatches but only 1 contiguous range
+			expect(e.mismatches).toHaveLength(3);
+			expect(e.affectedRanges).toHaveLength(1);
+			expect(e.affectedRanges[0]).toEqual({ start: 2, end: 4 });
+		}
+	});
+
+	it("compacts mixed contiguous and non-contiguous lines", () => {
+		const content = "line1\nline2\nline3\nline4\nline5\nline6\nline7";
+		// Mismatches on 2, 3 (contiguous) and 5, 7 (non-contiguous)
+		const edits = [
+			{ op: "set" as const, tag: parseTag("2#000000"), content: ["NEW2"] },
+			{ op: "set" as const, tag: parseTag("3#000000"), content: ["NEW3"] },
+			{ op: "set" as const, tag: parseTag("5#000000"), content: ["NEW5"] },
+			{ op: "set" as const, tag: parseTag("7#000000"), content: ["NEW7"] },
+		];
+
+		try {
+			applyHashlineEdits(content, edits);
+			expect.unreachable("should have thrown");
+		} catch (err) {
+			expect(err).toBeInstanceOf(HashlineMismatchError);
+			const e = err as HashlineMismatchError;
+
+			expect(e.mismatches).toHaveLength(4);
+			// Should compact to: [2-3], [5], [7]
+			expect(e.affectedRanges).toHaveLength(3);
+			expect(e.affectedRanges[0]).toEqual({ start: 2, end: 3 });
+			expect(e.affectedRanges[1]).toEqual({ start: 5, end: 5 });
+			expect(e.affectedRanges[2]).toEqual({ start: 7, end: 7 });
+		}
+	});
+
+	it("provides remaps for automatic retry", () => {
+		const content = "aaa\nbbb\nccc";
+		const staleTag = parseTag("2#000000");
+		const edits = [{ op: "set" as const, tag: staleTag, content: ["BBB"] }];
+
+		try {
+			applyHashlineEdits(content, edits);
+			expect.unreachable("should have thrown");
+		} catch (err) {
+			expect(err).toBeInstanceOf(HashlineMismatchError);
+			const e = err as HashlineMismatchError;
+
+			// remaps should contain the correct hash
+			const correctHash = computeLineHash(2, "bbb");
+			const staleKey = `2#000000`;
+			const correctTag = `2#${correctHash}`;
+
+			expect(e.remaps.has(staleKey)).toBe(true);
+			expect(e.remaps.get(staleKey)).toBe(correctTag);
+		}
+	});
+
+	it("error message shows context lines with correct format", () => {
+		const content = "line1\nline2\nline3\nline4\nline5";
+		const edits = [{ op: "set" as const, tag: parseTag("3#000000"), content: ["NEW3"] }];
+
+		try {
+			applyHashlineEdits(content, edits);
+			expect.unreachable("should have thrown");
+		} catch (err) {
+			expect(err).toBeInstanceOf(HashlineMismatchError);
+			const e = err as HashlineMismatchError;
+			const msg = e.message;
+
+			// Should show mismatch line with >>> marker
+			const correctHash = computeLineHash(3, "line3");
+			expect(msg).toContain(`>>> 3#${correctHash}|line3`);
+
+			// Should show context lines without >>> marker
+			const contextHash2 = computeLineHash(2, "line2");
+			const contextHash4 = computeLineHash(4, "line4");
+			expect(msg).toContain(`2#${contextHash2}|line2`);
+			expect(msg).toContain(`4#${contextHash4}|line4`);
+		}
+	});
+});
+
