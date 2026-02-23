@@ -606,7 +606,7 @@ export class AgentSession {
 				const { toolName, $normative, toolCallId, details, isError, content } = event.message as {
 					toolName?: string;
 					toolCallId?: string;
-					details?: { path?: string };
+					details?: { path?: string; affectedRanges?: Array<{ start: number; end: number }> };
 					$normative?: Record<string, unknown>;
 					isError?: boolean;
 					content?: Array<TextContent | ImageContent>;
@@ -618,6 +618,18 @@ export class AgentSession {
 				if (toolName === "edit" && details?.path) {
 					this.#invalidateFileCacheForPath(details.path);
 				}
+				// Handle partial re-read for hashline mismatch
+				if (toolName === "edit" && details?.affectedRanges && isError) {
+					logger.debug("Partial re-read triggered", { path: details.path, ranges: details.affectedRanges });
+					// TODO: Implement auto-re-read with affected ranges
+				}
+
+				// Handle partial re-read for hashline mismatch
+				if (toolName === "edit" && details?.affectedRanges && isError) {
+					logger.debug("Partial re-read triggered", { path: details.path, ranges: details.affectedRanges });
+					// TODO: Implement auto-re-read with affected ranges
+				}
+
 				if (toolName === "todo_write" && isError) {
 					const errorText = content?.find(part => part.type === "text")?.text;
 					const reminderText = [
