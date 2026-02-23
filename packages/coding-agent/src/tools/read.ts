@@ -587,7 +587,7 @@ export class ReadTool implements AgentTool<typeof readSchema, ReadToolDetails> {
 		_onUpdate?: AgentToolUpdateCallback<ReadToolDetails>,
 		toolContext?: AgentToolContext,
 	): Promise<AgentToolResult<ReadToolDetails>> {
-		const { path: readPath, offset, limit } = params;
+		const { path: readPath, offset, limit, ranges } = params;
 
 		const displayMode = resolveFileDisplayMode(this.session);
 
@@ -635,6 +635,11 @@ export class ReadTool implements AgentTool<typeof readSchema, ReadToolDetails> {
 
 		if (isDirectory) {
 			return this.#readDirectory(absolutePath, limit, signal);
+		}
+
+		// Handle ranges parameter (overrides offset/limit)
+		if (ranges && ranges.length > 0) {
+			return this.#readRanges(absolutePath, ranges, signal, toolContext);
 		}
 
 		const mimeType = await detectSupportedImageMimeTypeFromFile(absolutePath);
@@ -1049,10 +1054,82 @@ export class ReadTool implements AgentTool<typeof readSchema, ReadToolDetails> {
 			.limits({ resultLimit: limitMeta.resultLimit?.reached });
 		if (truncation.truncated) {
 			resultBuilder.truncation(truncation, { direction: "head" });
-			details.truncation = truncation;
 		}
 
 		return resultBuilder.done();
+	}
+
+	/**
+	 * Read specific line ranges from a file.
+	 */
+	async #readRanges(
+		absolutePath: string,
+		ranges: Array<{ start: number; end: number }>,
+		_signal?: AbortSignal,
+		_toolContext?: AgentToolContext,
+	): Promise<AgentToolResult<ReadToolDetails>> {
+		// Validate ranges
+		for (const range of ranges) {
+			if (range.start < 1 || range.end < range.start) {
+				throw new ToolError(
+					`Invalid range: start=${range.start}, end=${range.end}. Start must be >= 1 and end >= start.`,
+				);
+			}
+		}
+
+		// Sort ranges by start line
+		ranges.sort((a, b) => a.start - b.start);
+
+		// Merge overlapping ranges
+		const mergedRanges: Array<{ start: number; end: number }> = [];
+		for (const range of ranges) {
+			if (mergedRanges.length === 0) {
+				mergedRanges.push(range);
+			} else {
+				const last = mergedRanges[mergedRanges.length - 1];
+				if (range.start <= last.end + 1) {
+					// Overlapping or adjacent - merge
+					last.end = Math.max(last.end, range.end);
+				} else {
+					mergedRanges.push(range);
+				}
+			}
+		}
+
+		// Read each range and combine results
+		let allLines: string[] = [];
+		let totalFileLines = 0;
+
+		// First, get total file lines to validate ranges
+		try {
+			const fileContent = await Bun.file(absolutePath).text();
+			const fileLines = fileContent.split("\n");
+			totalFileLines = fileLines.length;
+
+			// Process each merged range
+			for (const range of mergedRanges) {
+				// Adjust for 0-indexed internal representation
+				const startIdx = range.start - 1;
+				const endIdx = Math.min(range.end, totalFileLines) - 1;
+
+				if (startIdx < totalFileLines) {
+					// Extract lines for this range
+					const rangeLines = fileLines.slice(startIdx, endIdx + 1);
+					allLines = allLines.concat(rangeLines);
+				}
+			}
+		} catch (error) {
+			if (isNotFoundError(error)) {
+				throw new ToolError(`File not found: ${absolutePath}`);
+			}
+			throw error;
+		}
+
+		const contentText = allLines.join("\n");
+		const details: ReadToolDetails = {};
+		const sourcePath = absolutePath;
+
+		return toolResult(details).text(contentText).sourcePath(sourcePath).done();
 	}
 }
 
