@@ -6,7 +6,6 @@
         "ranges parameter defined in read tool schema"
       ],
       "missing": [
-        "Read tool doesn't implement ranges functionality",
         "Agent session only steers user message instead of auto-triggering",
         "No automatic retry mechanism"
       ]
@@ -21,21 +20,21 @@
           "status": "pending"
         },
         {
-          "id": "oh-my-pi-wip-design", 
+          "id": "oh-my-pi-wip-design",
           "content": "Design: Auto-retry architecture",
           "type": "design",
           "status": "pending"
         },
         {
           "id": "oh-my-pi-wip-impl-read",
-          "content": "Implementation: Add ranges support to read tool", 
+          "content": "Implementation: Add ranges support to read tool",
           "type": "implementation",
-          "status": "pending"
+          "status": "completed"
         },
         {
           "id": "oh-my-pi-wip-impl-agent",
           "content": "Implementation: Add auto-trigger to agent session",
-          "type": "implementation", 
+          "type": "implementation",
           "status": "pending"
         },
         {
@@ -74,7 +73,7 @@
       {
         "commit": "design(patch): define auto-retry architecture",
         "changes": [
-          "Agent session error handling flow", 
+          "Agent session error handling flow",
           "Read tool ranges implementation plan"
         ]
       },
@@ -83,7 +82,7 @@
         "changes": [
           "Handle ranges array in execute method",
           "Convert ranges to offset/limit for streaming",
-          "Support multiple non-contiguous ranges", 
+          "Support multiple non-contiguous ranges",
           "Add validation and error handling"
         ]
       },
@@ -113,7 +112,7 @@
         ]
       },
       {
-        "commit": "docs(patch): update partial re-read documentation", 
+        "commit": "docs(patch): update partial re-read documentation",
         "changes": [
           "Update partial-re-read-complete.md",
           "Add auto-retry section",
@@ -123,7 +122,7 @@
     ],
     "acceptanceCriteria": [
       "Edit tool hash mismatch automatically triggers read with affected ranges",
-      "Read tool accepts and processes ranges parameter correctly", 
+      "Read tool accepts and processes ranges parameter correctly",
       "Agent session updates context with fresh hashlines",
       "Edit automatically retries with updated hashlines",
       "All existing tests continue to pass",
@@ -133,7 +132,7 @@
     "implementationFiles": {
       "modified": [
         "packages/coding-agent/src/tools/read.ts",
-        "packages/coding-agent/src/session/agent-session.ts", 
+        "packages/coding-agent/src/session/agent-session.ts",
         "packages/coding-agent/src/patch/index.ts"
       ],
       "newTests": [
@@ -148,7 +147,7 @@
           "focus": "Read tool ranges implementation"
         },
         "phase2": {
-          "days": "Days 2-3", 
+          "days": "Days 2-3",
           "focus": "Agent session auto-trigger"
         },
         "phase3": {
@@ -160,6 +159,17 @@
           "focus": "Testing and documentation"
         }
       }
-    }
+    },
+    "completedTasks": [
+      {
+        "id": "oh-my-pi-wip-impl-read",
+        "content": "Implementation: Add ranges support to read tool",
+        "type": "implementation",
+        "status": "completed",
+        "completedIn": "main branch",
+        "commit": "74adbf9d",
+        "completedDate": "2026-02-23"
+      }
+    ]
   }
 }
