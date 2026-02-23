@@ -53,7 +53,7 @@ export function formatLineTag(line: number, content: string): string {
 /**
  * Format file content with hashline prefixes for display.
  *
- * Each line becomes `LINENUM#HASH:CONTENT` where LINENUM is 1-indexed.
+ * Each line becomes `LINENUM#HASH|CONTENT` where LINENUM is 1-indexed.
  *
  * @param content - Raw file content string
  * @param startLine - First line number (1-indexed, defaults to 1)
@@ -62,7 +62,7 @@ export function formatLineTag(line: number, content: string): string {
  * @example
  * ```
  * formatHashLines("function hi() {\n  return;\n}")
- * // "1#HH:function hi() {\n2#HH:  return;\n3#HH:}"
+ * // "1#HH|function hi() {\n2#HH|  return;\n3#HH|}"
  * ```
  */
 export function formatHashLines(content: string, startLine = 1): string {

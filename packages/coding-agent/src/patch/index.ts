@@ -600,7 +600,7 @@ export class EditTool implements AgentTool<TInput> {
 								if (ref.line >= 1 && ref.line <= lines.length) {
 									const text = lines[ref.line - 1];
 									const hash = computeLineHash(ref.line, text);
-									targetLines.push(`${ref.line}#${hash}:${text}`);
+									targetLines.push(`${ref.line}#${hash}|${text}`);
 								}
 							} catch {
 								/* skip malformed refs */

@@ -58,7 +58,7 @@ function prependLineNumbers(text: string, startNum: number): string {
 
 function prependHashLines(text: string, startNum: number): string {
 	const textLines = text.split("\n");
-	return textLines.map((line, i) => `${startNum + i}#${computeLineHash(startNum + i, line)}:${line}`).join("\n");
+	return textLines.map((line, i) => `${startNum + i}#${computeLineHash(startNum + i, line)}|${line}`).join("\n");
 }
 
 function formatTextWithMode(
