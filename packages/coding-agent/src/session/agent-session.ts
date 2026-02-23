@@ -47,6 +47,7 @@ import { expandRoleAlias, parseModelString } from "../config/model-resolver";
 import { expandPromptTemplate, type PromptTemplate, renderPromptTemplate } from "../config/prompt-templates";
 import type { Settings, SkillsSettings } from "../config/settings";
 import { type BashResult, executeBash as executeBashCommand } from "../exec/bash-executor";
+import { AsyncJobManager } from "../async";
 import { exportSessionToHtml } from "../export/html";
 import type { TtsrManager, TtsrMatchContext } from "../export/ttsr";
 import type { LoadedCustomCommand } from "../extensibility/custom-commands";
@@ -396,6 +397,7 @@ export class AgentSession {
 		this.#scopedModels = config.scopedModels ?? [];
 		this.#promptTemplates = config.promptTemplates ?? [];
 		this.#slashCommands = config.slashCommands ?? [];
+		this.#asyncJobManager = config.asyncJobManager;
 		this.#extensionRunner = config.extensionRunner;
 		this.#skills = config.skills ?? [];
 		this.#skillWarnings = config.skillWarnings ?? [];
@@ -1515,6 +1517,29 @@ export class AgentSession {
 		return this.#planModeState;
 	}
 
+
+	/**
+	 * Get a snapshot of async job state for UI display.
+	 * @returns Snapshot with running and recent jobs, or null if async jobs disabled
+	 */
+	getAsyncJobSnapshot(options?: { recentLimit?: number }): { running: Array<{ id: string; type: string; status: string; label: string; startTime: number }>; recent: Array<{ id: string; type: string; status: string; label: string; startTime: number }> } | null {
+		if (!this.#asyncJobManager) return null;
+		const running = this.#asyncJobManager.getRunningJobs().map(job => ({
+			id: job.id,
+			type: job.type,
+			status: job.status,
+			label: job.label,
+			startTime: job.startTime,
+		}));
+		const recent = this.#asyncJobManager.getRecentJobs(options?.recentLimit ?? 5).map(job => ({
+			id: job.id,
+			type: job.type,
+			status: job.status,
+			label: job.label,
+			startTime: job.startTime,
+		}));
+		return { running, recent };
+	}
 	setPlanModeState(state: PlanModeState | undefined): void {
 		this.#planModeState = state;
 		if (state?.enabled) {
