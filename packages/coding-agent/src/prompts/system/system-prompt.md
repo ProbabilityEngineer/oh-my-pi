@@ -77,6 +77,14 @@ Semantic questions deserve semantic tools.
 - File contents? → `lsp symbols`
 {{/has}}
 
+{{#if capabilities.astGrep}}
+### AST-grep: structural code search
+Use `ast_grep` tool for pattern-based code search. It matches AST nodes, not text.
+**Patterns**: `$NAME` (single node), `$$$ARGS` (multiple nodes).
+**Example**: `function $NAME($$$ARGS) { $BODY }` finds all functions.
+Prefer over regex for code search; understands syntax, ignores comments/strings.
+{{/if}}
+
 {{#has tools "ssh"}}
 ### SSH: match commands to host shell
 Check host list. linux/bash, macos/zsh: Unix. windows/cmd: dir, type, findstr. windows/powershell: Get-ChildItem, Get-Content.

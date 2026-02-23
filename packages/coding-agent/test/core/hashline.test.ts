@@ -874,12 +874,7 @@ describe("Scenario: 6-char hash collision resistance", () => {
 
 	it("produces unique hashes for similar but different content", () => {
 		// Test that small changes produce different 6-char hashes
-		const lines = [
-			"const x = 1;",
-			"const x = 2;",
-			"const x = 10;",
-			"const y = 1;",
-		];
+		const lines = ["const x = 1;", "const x = 2;", "const x = 10;", "const y = 1;"];
 		const hashes = lines.map((line, i) => computeLineHash(i + 1, line));
 
 		// All hashes should be unique
@@ -995,7 +990,7 @@ describe("Scenario: Pipe separator parsing", () => {
 		const resultLines = result.split("\n");
 
 		expect(resultLines).toHaveLength(3);
-		resultLines.forEach((line) => {
+		resultLines.forEach(line => {
 			expect(line).toContain("|");
 			const [tag] = line.split("|");
 			expect(tag).toMatch(/^\d+#[0-9a-f]{6}$/);
@@ -1125,4 +1120,3 @@ describe("Scenario: Partial re-read on hash mismatch", () => {
 		}
 	});
 });
-

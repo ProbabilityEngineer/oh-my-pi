@@ -420,6 +420,7 @@ export function cacheStats(): { content: number; dir: number } {
 // Re-exports
 // =============================================================================
 
+export { type Capabilities, detectCapabilities } from "./availability-detector";
 export type {
 	Capability,
 	CapabilityInfo,

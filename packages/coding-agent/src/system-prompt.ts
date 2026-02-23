@@ -8,6 +8,7 @@ import * as path from "node:path";
 import { $env, hasFsCode, isEnoent, logger, untilAborted } from "@oh-my-pi/pi-utils";
 import { getGpuCachePath, getProjectDir } from "@oh-my-pi/pi-utils/dirs";
 import { $ } from "bun";
+import { type Capabilities, detectCapabilities } from "./capability";
 import { contextFileCapability } from "./capability/context-file";
 import { systemPromptCapability } from "./capability/system-prompt";
 import { renderPromptTemplate } from "./config/prompt-templates";
@@ -519,6 +520,7 @@ export async function buildSystemPrompt(options: BuildSystemPromptOptions = {}):
 			? await logger.timeAsync("loadPreloadedSkills", loadPreloadedSkillContents, preloadedSkills)
 			: [];
 		const gitPromise = logger.timeAsync("loadGitContext", loadGitContext, resolvedCwd);
+		const capabilitiesPromise = logger.timeAsync("detectCapabilities", detectCapabilities, resolvedCwd);
 
 		const [
 			resolvedCustomPrompt,
@@ -529,6 +531,7 @@ export async function buildSystemPrompt(options: BuildSystemPromptOptions = {}):
 			skills,
 			preloadedSkillContents,
 			git,
+			capabilities,
 		] = await Promise.all([
 			resolvePromptInput(customPrompt, "system prompt"),
 			resolvePromptInput(appendSystemPrompt, "append system prompt"),
@@ -538,6 +541,7 @@ export async function buildSystemPrompt(options: BuildSystemPromptOptions = {}):
 			skillsPromise,
 			preloadedSkillContentsPromise,
 			gitPromise,
+			capabilitiesPromise,
 		]);
 
 		return {
@@ -549,6 +553,7 @@ export async function buildSystemPrompt(options: BuildSystemPromptOptions = {}):
 			skills,
 			preloadedSkillContents,
 			git,
+			capabilities,
 		};
 	})();
 
@@ -572,6 +577,7 @@ export async function buildSystemPrompt(options: BuildSystemPromptOptions = {}):
 	let skills: Skill[] = providedSkills ?? [];
 	let preloadedSkillContents: PreloadedSkill[] = [];
 	let git: GitContext | null = null;
+	let capabilities: Capabilities = { astGrep: false };
 
 	if (prepResult.type === "timeout") {
 		logger.warn("System prompt preparation timed out; using minimal startup context", {
@@ -596,6 +602,7 @@ export async function buildSystemPrompt(options: BuildSystemPromptOptions = {}):
 		skills = prepResult.value.skills;
 		preloadedSkillContents = prepResult.value.preloadedSkillContents;
 		git = prepResult.value.git;
+		capabilities = prepResult.value.capabilities;
 	}
 
 	const now = new Date();
@@ -649,6 +656,7 @@ export async function buildSystemPrompt(options: BuildSystemPromptOptions = {}):
 			contextFiles,
 			agentsMdSearch,
 			git,
+			capabilities,
 			skills: filteredSkills,
 			preloadedSkills: preloadedSkillContents,
 			rules: rules ?? [],
@@ -668,6 +676,7 @@ export async function buildSystemPrompt(options: BuildSystemPromptOptions = {}):
 		contextFiles,
 		agentsMdSearch,
 		git,
+		capabilities,
 		skills: filteredSkills,
 		preloadedSkills: preloadedSkillContents,
 		rules: rules ?? [],
