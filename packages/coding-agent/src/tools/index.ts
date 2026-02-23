@@ -15,6 +15,7 @@ import type { AgentOutputManager } from "../task/output-manager";
 import type { EventBus } from "../utils/event-bus";
 import { SearchTool } from "../web/search";
 import { AskTool } from "./ask";
+import { AstGrepTool } from "./ast-grep";
 import { BashTool } from "./bash";
 import { BrowserTool } from "./browser";
 import { CalculatorTool } from "./calculator";
@@ -52,6 +53,7 @@ export * from "../session/streaming-output";
 export { BUNDLED_AGENTS, TaskTool } from "../task";
 export * from "../web/search";
 export { AskTool, type AskToolDetails } from "./ask";
+export { AstGrepTool, type AstGrepToolDetails } from "./ast-grep";
 export { BashTool, type BashToolDetails, type BashToolInput, type BashToolOptions } from "./bash";
 export { BrowserTool, type BrowserToolDetails } from "./browser";
 export { CalculatorTool, type CalculatorToolDetails } from "./calculator";
@@ -140,6 +142,7 @@ type ToolFactory = (session: ToolSession) => Tool | null | Promise<Tool | null>;
 
 export const BUILTIN_TOOLS: Record<string, ToolFactory> = {
 	ask: AskTool.createIf,
+	ast_grep: s => new AstGrepTool(s),
 	bash: s => new BashTool(s),
 	python: s => new PythonTool(s),
 	calc: s => new CalculatorTool(s),
