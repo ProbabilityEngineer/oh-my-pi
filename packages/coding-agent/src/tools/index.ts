@@ -7,7 +7,6 @@ import type { InternalUrlRouter } from "../internal-urls";
 import { getPreludeDocs, warmPythonEnvironment } from "../ipy/executor";
 import { checkPythonKernelAvailability } from "../ipy/kernel";
 import { LspTool } from "../lsp";
-import { EditTool } from "../patch";
 import type { PlanModeState } from "../plan-mode/state";
 import type { ArtifactManager } from "../session/artifacts";
 import { TaskTool } from "../task";
@@ -19,6 +18,7 @@ import { AstGrepTool } from "./ast-grep";
 import { BashTool } from "./bash";
 import { BrowserTool } from "./browser";
 import { CalculatorTool } from "./calculator";
+import { EditTool } from "./edit";
 import { ExitPlanModeTool } from "./exit-plan-mode";
 import { FetchTool } from "./fetch";
 import { FindTool } from "./find";
@@ -48,7 +48,6 @@ export {
 	type LspWarmupResult,
 	warmupLspServers,
 } from "../lsp";
-export { EditTool, type EditToolDetails } from "../patch";
 export * from "../session/streaming-output";
 export { BUNDLED_AGENTS, TaskTool } from "../task";
 export * from "../web/search";
@@ -57,6 +56,7 @@ export { AstGrepTool, type AstGrepToolDetails } from "./ast-grep";
 export { BashTool, type BashToolDetails, type BashToolInput, type BashToolOptions } from "./bash";
 export { BrowserTool, type BrowserToolDetails } from "./browser";
 export { CalculatorTool, type CalculatorToolDetails } from "./calculator";
+export { EditTool, type EditToolDetails } from "./edit";
 export { type ExitPlanModeDetails, ExitPlanModeTool } from "./exit-plan-mode";
 export { FetchTool, type FetchToolDetails } from "./fetch";
 export { type FindOperations, FindTool, type FindToolDetails, type FindToolInput, type FindToolOptions } from "./find";
