@@ -139,6 +139,7 @@ type TodoPhaseTask = {
 	id: string;
 	content: string;
 	status: "pending" | "in_progress" | "completed" | "abandoned";
+	notes?: string;
 };
 
 type TodoPhase = {
