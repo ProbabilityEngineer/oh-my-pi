@@ -1517,7 +1517,6 @@ export class AgentSession {
 		return this.#planModeState;
 	}
 
-	/**
 	setPlanModeState(state: PlanModeState | undefined): void {
 		this.#planModeState = state;
 		if (state?.enabled) {
