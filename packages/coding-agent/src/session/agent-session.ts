@@ -606,7 +606,7 @@ export class AgentSession {
 				const { toolName, $normative, toolCallId, details, isError, content } = event.message as {
 					toolName?: string;
 					toolCallId?: string;
-					details?: { path?: string };
+					details?: { path?: string; affectedRanges?: Array<{ start: number; end: number }> };
 					$normative?: Record<string, unknown>;
 					isError?: boolean;
 					content?: Array<TextContent | ImageContent>;
@@ -618,6 +618,19 @@ export class AgentSession {
 				if (toolName === "edit" && details?.path) {
 					this.#invalidateFileCacheForPath(details.path);
 				}
+				// Handle partial re-read for hashline mismatch
+				if (toolName === "edit" && details?.affectedRanges && isError) {
+					const path = details.path ?? "unknown";
+					const rangesText = details.affectedRanges.map(r => `lines ${r.start}-${r.end}`).join(", ");
+
+					// Steer a user message to prompt re-read
+					this.agent.steer({
+						role: "user",
+						content: `Please re-read the file at **${path}** for the following affected ranges: ${rangesText}. This will update the file state for the next edit attempt.`,
+						timestamp: Date.now(),
+					});
+				}
+
 				if (toolName === "todo_write" && isError) {
 					const errorText = content?.find(part => part.type === "text")?.text;
 					const reminderText = [
