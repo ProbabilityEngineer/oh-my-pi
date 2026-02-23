@@ -231,20 +231,20 @@ function resolveEditAnchors(edits: HashlineToolEdit[]): HashlineEdit[] {
 		switch (op) {
 			case "replace": {
 				if (tag && end) {
-					result.push({ op: "replace", first: tag, last: end, lines });
+					result.push({ op: "replace", first: tag, last: end, content: lines });
 				} else if (tag || end) {
-					result.push({ op: "replace", tag: tag || end!, lines });
+					result.push({ op: "replace", tag: tag || end!, content: lines });
 				} else {
 					throw new Error("Replace requires at least one anchor (tag or end).");
 				}
 				break;
 			}
 			case "append": {
-				result.push({ op: "append", after: tag ?? end, lines });
+				result.push({ op: "append", after: tag ?? end, content: lines });
 				break;
 			}
 			case "prepend": {
-				result.push({ op: "prepend", before: end ?? tag, lines });
+				result.push({ op: "prepend", before: end ?? tag, content: lines });
 				break;
 			}
 		}
@@ -550,7 +550,7 @@ export class EditTool implements AgentTool<TInput> {
 
 			// Apply anchor-based edits first (replace, append, prepend)
 			const anchorResult = applyHashlineEdits(normalizedText, anchorEdits);
-			normalizedText = anchorResult.lines;
+			normalizedText = anchorResult.content;
 
 			const result = {
 				text: normalizedText,
@@ -564,12 +564,12 @@ export class EditTool implements AgentTool<TInput> {
 					const details = result.noopEdits
 						.map(
 							e =>
-								`Edit ${e.editIndex}: replacement for ${e.loc} is identical to current content:\n  ${e.loc}| ${e.current}`,
+								`Edit ${e.editIndex}: replacement for ${e.loc} is identical to current content:\n  ${e.loc}| ${e.currentContent}`,
 						)
 						.join("\n");
 					diagnostic += `\n${details}`;
 					diagnostic +=
-						"\nYour content must differ from what the file already contains. Re-read the file to see the current state.";
+						"\nYour content must differ from what the file already contains. Re-read the file to see the.currentContent state.";
 				} else {
 					// Edits were not literally identical but heuristics normalized them back
 					const lines = result.text.split("\n");
@@ -579,17 +579,17 @@ export class EditTool implements AgentTool<TInput> {
 						refs.length = 0;
 						switch (edit.op) {
 							case "replace":
-								if (edit.end) {
-									refs.push(edit.end, edit.pos);
+								if ("last" in edit && edit.last) {
+									refs.push(edit.last, edit.first);
 								} else {
-									refs.push(edit.pos);
+									refs.push((edit as { tag: Anchor }).tag);
 								}
 								break;
 							case "append":
-								if (edit.pos) refs.push(edit.pos);
+								if (edit.after) refs.push(edit.after);
 								break;
 							case "prepend":
-								if (edit.pos) refs.push(edit.pos);
+								if (edit.before) refs.push(edit.before);
 								break;
 							default:
 								break;
@@ -609,7 +609,7 @@ export class EditTool implements AgentTool<TInput> {
 					}
 					if (targetLines.length > 0) {
 						const preview = [...new Set(targetLines)].slice(0, 5).join("\n");
-						diagnostic += `\nThe file currently contains these lines:\n${preview}\nYour edits were normalized back to the original content (whitespace-only differences are preserved as-is). Ensure your replacement changes actual code, not just formatting.`;
+						diagnostic += `\nThe file.currentContently contains these lines:\n${preview}\nYour edits were normalized back to the original content (whitespace-only differences are preserved as-is). Ensure your replacement changes actual code, not just formatting.`;
 					}
 				}
 				throw new Error(diagnostic);
