@@ -1,0 +1,76 @@
+{
+  "partialReReadAutoRetry": {
+    "currentStatus": {
+      "infrastructure": [
+        "HashlineMismatchError with affectedRanges property (hashline.ts:329)",
+        "ranges parameter in read tool schema",
+        "#readRanges() method implementation (read.ts:1066-1134)",
+        "affectedRanges extracted from edit tool errors (agent-session.ts:671)"
+      ],
+      "missing": [
+        "Auto-trigger: agent-session.ts:676-680 only steers user message instead of calling read tool",
+        "No automatic retry mechanism after re-read completes"
+      ]
+    },
+    "beadsStructure": {
+      "epic": "oh-my-pi-16s",
+      "tasks": [
+        {
+          "id": "oh-my-pi-l5l",
+          "content": "Implement auto-re-read trigger: replace steer() with actual read tool call",
+          "type": "implementation",
+          "status": "pending",
+          "priority": "P1",
+          "files": ["packages/coding-agent/src/session/agent-session.ts:671-681"]
+        },
+        {
+          "id": "oh-my-pi-vmk",
+          "content": "Implement automatic edit retry after successful re-read",
+          "type": "implementation",
+          "status": "pending",
+          "priority": "P1",
+          "files": ["packages/coding-agent/src/session/agent-session.ts"]
+        }
+      ]
+    },
+    "branchStrategy": {
+      "branch": "epic/partial-re-read-auto",
+      "lifecycle": "Merge after completion",
+      "protection": "PR required, CI must pass"
+    },
+    "acceptanceCriteria": [
+      "Edit tool hash mismatch automatically triggers read tool with affected ranges (no user intervention)",
+      "Read tool accepts and processes ranges parameter correctly",
+      "Agent session updates context with fresh hashlines from re-read",
+      "Edit automatically retries with updated hashlines (no user intervention)",
+      "Max retry count prevents infinite loops (suggest: 3 retries)",
+      "All existing tests continue to pass",
+      "New scenario tests cover auto-retry flow"
+    ],
+    "implementationFiles": {
+      "modified": [
+        "packages/coding-agent/src/session/agent-session.ts (replace steer with auto read + retry)"
+      ],
+      "newTests": [
+        "packages/coding-agent/test/partial-re-read-auto.test.ts"
+      ]
+    },
+    "timelineEstimate": {
+      "total": "1-2 days",
+      "phases": {
+        "phase1": {
+          "days": "Day 1",
+          "focus": "Auto-trigger: replace steer() with read tool call"
+        },
+        "phase2": {
+          "days": "Day 1-2",
+          "focus": "Automatic retry mechanism with context update"
+        },
+        "phase3": {
+          "days": "Day 2",
+          "focus": "Testing and documentation"
+        }
+      }
+    }
+  }
+}
