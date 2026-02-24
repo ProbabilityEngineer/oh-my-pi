@@ -374,6 +374,12 @@ export class InteractiveMode implements InteractiveModeContext {
 			this.ui.requestRender();
 		});
 
+		// Set up git status refresh callback
+		this.statusLine.watchGitStatus(() => {
+			this.updateEditorTopBorder();
+			this.ui.requestRender();
+		});
+
 		// Initial top border update
 		this.updateEditorTopBorder();
 	}

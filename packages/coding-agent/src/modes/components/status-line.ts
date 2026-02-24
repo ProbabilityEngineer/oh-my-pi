@@ -42,6 +42,7 @@ export class StatusLineComponent implements Component {
 	#gitWatcher: fs.FSWatcher | null = null;
 	#onBranchChange: (() => void) | null = null;
 	#onProjectDirChange: (() => void) | null = null;
+	#onGitStatusChange: (() => void) | null = null;
 	#autoCompactEnabled: boolean = true;
 	#hookStatuses: Map<string, string> = new Map();
 	#subagentCount: number = 0;
@@ -104,6 +105,10 @@ export class StatusLineComponent implements Component {
 				this.#onProjectDirChange();
 			}
 		});
+	}
+
+	watchGitStatus(onGitStatusChange: () => void): void {
+		this.#onGitStatusChange = onGitStatusChange;
 	}
 
 	#setupGitWatcher(): void {
@@ -173,7 +178,7 @@ export class StatusLineComponent implements Component {
 			return this.#cachedGitStatus;
 		}
 
-		// Fire async fetch, return cached value
+		// Fire async fetch for next render, return cached value now
 		(async () => {
 			try {
 				const projectDir = this.session.sessionManager.getProjectDir();
@@ -212,6 +217,10 @@ export class StatusLineComponent implements Component {
 
 				this.#cachedGitStatus = { staged, unstaged, untracked };
 				this.#gitStatusLastFetch = now;
+				// Trigger re-render with fresh status
+				if (this.#onGitStatusChange) {
+					this.#onGitStatusChange();
+				}
 			} catch {
 				this.#cachedGitStatus = null;
 				this.#gitStatusLastFetch = now;
