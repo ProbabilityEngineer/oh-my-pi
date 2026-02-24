@@ -32,7 +32,6 @@ import { ReadTool } from "./read";
 import { reportFindingTool } from "./review";
 import { loadSshTool } from "./ssh";
 import { SubmitResultTool } from "./submit-result";
-import { type TodoPhase, TodoWriteTool } from "./todo-write";
 import { WriteTool } from "./write";
 
 // Exa MCP tools (22 tools)
@@ -72,13 +71,6 @@ export { ReadTool, type ReadToolDetails, type ReadToolInput } from "./read";
 export { reportFindingTool, type SubmitReviewDetails } from "./review";
 export { loadSshTool, type SSHToolDetails, SshTool } from "./ssh";
 export { SubmitResultTool } from "./submit-result";
-export {
-	getLatestTodoPhasesFromEntries,
-	type TodoItem,
-	type TodoPhase,
-	TodoWriteTool,
-	type TodoWriteToolDetails,
-} from "./todo-write";
 export { WriteTool, type WriteToolDetails, type WriteToolInput } from "./write";
 
 /** Tool type (AgentTool from pi-ai) */
