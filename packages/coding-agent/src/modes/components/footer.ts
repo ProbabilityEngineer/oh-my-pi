@@ -1,17 +1,17 @@
 import * as fs from "node:fs";
 import { type Component, padding, truncateToWidth, visibleWidth } from "@oh-my-pi/pi-tui";
 import { formatNumber } from "@oh-my-pi/pi-utils";
-import { getProjectDir } from "@oh-my-pi/pi-utils/dirs";
 import { theme } from "../../modes/theme/theme";
 import type { AgentSession } from "../../session/agent-session";
 import { shortenPath } from "../../tools/render-utils";
 import { findGitHeadPathAsync, sanitizeStatusText } from "../shared";
 
 /**
- * Footer component that shows pwd, token stats, and context usage
+ * Footer component that shows project directory, token stats, and context usage
  */
 export class FooterComponent implements Component {
 	#cachedBranch: string | null | undefined = undefined; // undefined = not checked yet, null = not in git repo, string = branch name
+	#cachedProjectDir: string | undefined = undefined;
 	#gitWatcher: fs.FSWatcher | null = null;
 	#onBranchChange: (() => void) | null = null;
 	#autoCompactEnabled: boolean = true;
@@ -47,6 +47,20 @@ export class FooterComponent implements Component {
 		this.#setupGitWatcher();
 	}
 
+	/**
+	 * Set up cwd and project directory change listeners.
+	 * @param onCwdChange - Callback when working directory or project directory changes
+	 */
+	watchCwd(onCwdChange: () => void): void {
+		this.#cachedProjectDir = this.session.sessionManager.getProjectDir();
+		this.session.sessionManager.onCwdChange(() => {
+			onCwdChange();
+		});
+		this.session.sessionManager.onProjectDirChange(() => {
+			this.#cachedProjectDir = this.session.sessionManager.getProjectDir();
+			onCwdChange();
+		});
+	}
 	#setupGitWatcher(): void {
 		// Clean up existing watcher
 		if (this.#gitWatcher) {
@@ -150,8 +164,8 @@ export class FooterComponent implements Component {
 		const contextPercentValue = contextUsage?.percent ?? 0;
 		const contextPercent = contextUsage?.percent !== null ? contextPercentValue.toFixed(1) : "?";
 
-		// Replace home directory with ~
-		let pwd = shortenPath(getProjectDir());
+		// Get project directory from session (cached via watcher)
+		let pwd = shortenPath(this.#cachedProjectDir ?? this.session.sessionManager.getProjectDir());
 
 		// Add git branch if available
 		const branch = this.#getCurrentBranch();

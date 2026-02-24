@@ -1,6 +1,5 @@
 import * as os from "node:os";
 import { formatDuration, formatNumber } from "@oh-my-pi/pi-utils";
-import { getProjectDir } from "@oh-my-pi/pi-utils/dirs";
 import { theme } from "../../../modes/theme/theme";
 import { shortenPath } from "../../../tools/render-utils";
 import type { RenderedSegment, SegmentContext, StatusLineSegment, StatusLineSegmentId } from "./types";
@@ -75,8 +74,8 @@ const pathSegment: StatusLineSegment = {
 	render(ctx) {
 		const opts = ctx.options.path ?? {};
 
-		let pwd = getProjectDir();
-
+		// Get project directory from session (not global getProjectDir which is static)
+		let pwd = ctx.session.sessionManager.getProjectDir();
 		if (opts.abbreviate !== false) {
 			pwd = shortenPath(pwd);
 		}

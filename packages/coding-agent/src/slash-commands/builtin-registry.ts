@@ -257,6 +257,29 @@ const BUILTIN_SLASH_COMMAND_REGISTRY: ReadonlyArray<BuiltinSlashCommandSpec> = [
 		},
 	},
 	{
+		name: "project",
+		description: "Switch project/repository directory",
+		inlineHint: "<path>",
+		allowArgs: true,
+		handle: async (command, runtime) => {
+			if (!command.args) {
+				runtime.ctx.showStatus("Usage: /project <path> - Switch to a different project directory");
+				runtime.ctx.editor.setText("");
+				return;
+			}
+			const projectPath = command.args.trim();
+			try {
+				runtime.ctx.session.sessionManager.setProjectDir(projectPath);
+				runtime.ctx.showStatus(`Project directory: ${projectPath}`);
+			} catch (error) {
+				runtime.ctx.showWarning(
+					`Failed to switch project: ${error instanceof Error ? error.message : String(error)}`,
+				);
+			}
+			runtime.ctx.editor.setText("");
+		},
+	},
+	{
 		name: "login",
 		description: "Login with OAuth provider",
 		handle: (_command, runtime) => {

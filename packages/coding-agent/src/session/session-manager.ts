@@ -1137,6 +1137,9 @@ export class SessionManager {
 	#artifactManager: ArtifactManager | null = null;
 	#artifactManagerSessionFile: string | null = null;
 	readonly #blobStore: BlobStore;
+	#onCwdChange?: (newCwd: string) => void;
+	#projectDir: string;
+	#onProjectDirChange?: (newProjectDir: string) => void;
 
 	private constructor(
 		private readonly cwd: string,
@@ -1145,6 +1148,7 @@ export class SessionManager {
 		private readonly storage: SessionStorage,
 	) {
 		this.#blobStore = new BlobStore(getBlobsDir());
+		this.#projectDir = cwd;
 		if (persist && sessionDir) {
 			this.storage.ensureDirSync(sessionDir);
 		}
@@ -1518,6 +1522,35 @@ export class SessionManager {
 
 	getCwd(): string {
 		return this.cwd;
+	}
+
+	onCwdChange(callback: (newCwd: string) => void): void {
+		this.#onCwdChange = callback;
+	}
+
+	setCwd(newCwd: string): void {
+		if (this.cwd === newCwd) return;
+		// Note: controlled mutation of readonly field
+		(this as unknown as { cwd: string }).cwd = newCwd;
+		if (this.#onCwdChange) {
+			this.#onCwdChange(newCwd);
+		}
+	}
+
+	getProjectDir(): string {
+		return this.#projectDir;
+	}
+
+	onProjectDirChange(callback: (newProjectDir: string) => void): void {
+		this.#onProjectDirChange = callback;
+	}
+
+	setProjectDir(newProjectDir: string): void {
+		if (this.#projectDir === newProjectDir) return;
+		this.#projectDir = newProjectDir;
+		if (this.#onProjectDirChange) {
+			this.#onProjectDirChange(newProjectDir);
+		}
 	}
 
 	/** Get usage statistics across all assistant messages in the session. */
