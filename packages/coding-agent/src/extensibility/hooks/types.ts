@@ -22,7 +22,6 @@ import type {
 	SessionManager,
 } from "../../session/session-manager";
 import type { BashToolDetails, FindToolDetails, GrepToolDetails, ReadToolDetails } from "../../tools";
-import type { TodoItem } from "../../tools/todo-write";
 
 // Re-export for backward compatibility
 export type { ExecOptions, ExecResult } from "../../exec/exec";
@@ -432,7 +431,7 @@ export interface TtsrTriggeredEvent {
 /** Event data for todo_reminder event. */
 export interface TodoReminderEvent {
 	type: "todo_reminder";
-	todos: TodoItem[];
+	todos: any[];
 	attempt: number;
 	maxAttempts: number;
 }

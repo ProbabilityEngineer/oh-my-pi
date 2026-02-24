@@ -140,10 +140,6 @@ export interface ToolSession {
 	getPlanModeState?: () => PlanModeState | undefined;
 	/** Get compact conversation context for subagents (excludes tool results, system prompts) */
 	getCompactContext?: () => string;
-	/** Get cached todo phases for this session. */
-	getTodoPhases?: () => TodoPhase[];
-	/** Replace cached todo phases for this session. */
-	setTodoPhases?: (phases: TodoPhase[]) => void;
 }
 
 type ToolFactory = (session: ToolSession) => Tool | null | Promise<Tool | null>;
@@ -165,7 +161,6 @@ export const BUILTIN_TOOLS: Record<string, ToolFactory> = {
 	task: TaskTool.create,
 	cancel_job: CancelJobTool.createIf,
 	await: AwaitTool.createIf,
-	todo_write: s => new TodoWriteTool(s),
 	fetch: s => new FetchTool(s),
 	web_search: s => new SearchTool(s),
 	write: s => new WriteTool(s),
@@ -275,7 +270,7 @@ export async function createTools(session: ToolSession, toolNames?: string[]): P
 		if (name === "lsp") return enableLsp;
 		if (name === "bash") return allowBash;
 		if (name === "python") return allowPython;
-		if (name === "todo_write") return !includeSubmitResult && session.settings.get("todo.enabled");
+		if (name === "todo_write") return false; // Deprecated in favor of beads
 		if (name === "find") return session.settings.get("find.enabled");
 		if (name === "grep") return session.settings.get("grep.enabled");
 		if (name === "notebook") return session.settings.get("notebook.enabled");

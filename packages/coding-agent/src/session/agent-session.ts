@@ -88,7 +88,7 @@ import { closeAllConnections } from "../ssh/connection-manager";
 import { unmountAll } from "../ssh/sshfs-mount";
 import { outputMeta } from "../tools/output-meta";
 import { resolveToCwd } from "../tools/path-utils";
-import type { TodoItem } from "../tools/todo-write";
+// import type { TodoItem } from "../tools/todo-write"; // Deprecated
 import { parseCommandArgs } from "../utils/command-args";
 import { resolveFileDisplayMode } from "../utils/file-display-mode";
 import { extractFileMentions, generateFileMentionMessages } from "../utils/file-mentions";
@@ -131,7 +131,7 @@ export type AgentSessionEvent =
 	| { type: "auto_retry_start"; attempt: number; maxAttempts: number; delayMs: number; errorMessage: string }
 	| { type: "auto_retry_end"; success: boolean; attempt: number; finalError?: string }
 	| { type: "ttsr_triggered"; rules: Rule[] }
-	| { type: "todo_reminder"; todos: TodoItem[]; attempt: number; maxAttempts: number };
+	| { type: "todo_reminder"; todos: any[]; attempt: number; maxAttempts: number }; // Deprecated
 
 /** Listener function for agent session events */
 export type AgentSessionEventListener = (event: AgentSessionEvent) => void;

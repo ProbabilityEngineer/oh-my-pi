@@ -52,7 +52,6 @@ import type {
 	ReadToolInput,
 	WriteToolInput,
 } from "../../tools";
-import type { TodoItem } from "../../tools/todo-write";
 import type { EventBus } from "../../utils/event-bus";
 import type { SlashCommandInfo } from "../slash-commands";
 
@@ -565,7 +564,7 @@ export interface TtsrTriggeredEvent {
 /** Fired when todo reminder logic detects unfinished todos */
 export interface TodoReminderEvent {
 	type: "todo_reminder";
-	todos: TodoItem[];
+	todos: any[];
 	attempt: number;
 	maxAttempts: number;
 }

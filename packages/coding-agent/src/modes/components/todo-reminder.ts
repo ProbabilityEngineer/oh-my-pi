@@ -1,6 +1,5 @@
 import { Box, Container, Spacer, Text } from "@oh-my-pi/pi-tui";
 import { theme } from "../../modes/theme/theme";
-import type { TodoItem } from "../../tools/todo-write";
 
 /**
  * Component that renders a todo completion reminder notification.
@@ -10,7 +9,7 @@ export class TodoReminderComponent extends Container {
 	#box: Box;
 
 	constructor(
-		private readonly todos: TodoItem[],
+		private readonly todos: any[],
 		private readonly attempt: number,
 		private readonly maxAttempts: number,
 	) {

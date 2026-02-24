@@ -806,8 +806,6 @@ export async function createAgentSession(options: CreateAgentSessionOptions = {}
 		},
 		getPlanModeState: () => session.getPlanModeState(),
 		getCompactContext: () => session.formatCompactContext(),
-		getTodoPhases: () => session.getTodoPhases(),
-		setTodoPhases: phases => session.setTodoPhases(phases),
 		allocateOutputArtifact: async toolType => {
 			try {
 				return await sessionManager.allocateArtifactPath(toolType);
