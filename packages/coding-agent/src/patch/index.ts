@@ -569,7 +569,7 @@ export class EditTool implements AgentTool<TInput> {
 						.join("\n");
 					diagnostic += `\n${details}`;
 					diagnostic +=
-						"\nYour content must differ from what the file already contains. Re-read the file to see the.currentContent state.";
+						"\nYour content must differ from what the file already contains. Re-read the file to see the current state.";
 				} else {
 					// Edits were not literally identical but heuristics normalized them back
 					const lines = result.text.split("\n");
@@ -609,7 +609,7 @@ export class EditTool implements AgentTool<TInput> {
 					}
 					if (targetLines.length > 0) {
 						const preview = [...new Set(targetLines)].slice(0, 5).join("\n");
-						diagnostic += `\nThe file.currentContently contains these lines:\n${preview}\nYour edits were normalized back to the original content (whitespace-only differences are preserved as-is). Ensure your replacement changes actual code, not just formatting.`;
+						diagnostic += `\nThe file currently contains these lines:\n${preview}\nYour edits were normalized back to the original content (whitespace-only differences are preserved as-is). Ensure your replacement changes actual code, not just formatting.`;
 					}
 				}
 				throw new Error(diagnostic);
