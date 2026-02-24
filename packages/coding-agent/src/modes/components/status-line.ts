@@ -41,6 +41,7 @@ export class StatusLineComponent implements Component {
 	#cachedBranch: string | null | undefined = undefined;
 	#gitWatcher: fs.FSWatcher | null = null;
 	#onBranchChange: (() => void) | null = null;
+	#onProjectDirChange: (() => void) | null = null;
 	#autoCompactEnabled: boolean = true;
 	#hookStatuses: Map<string, string> = new Map();
 	#subagentCount: number = 0;
@@ -93,6 +94,15 @@ export class StatusLineComponent implements Component {
 	watchBranch(onBranchChange: () => void): void {
 		this.#onBranchChange = onBranchChange;
 		this.#setupGitWatcher();
+	}
+
+	watchProjectDir(onProjectDirChange: () => void): void {
+		this.#onProjectDirChange = onProjectDirChange;
+		this.session.sessionManager.onProjectDirChange(() => {
+			if (this.#onProjectDirChange) {
+				this.#onProjectDirChange();
+			}
+		});
 	}
 
 	#setupGitWatcher(): void {

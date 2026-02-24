@@ -368,6 +368,12 @@ export class InteractiveMode implements InteractiveModeContext {
 			this.ui.requestRender();
 		});
 
+		// Set up project directory watcher
+		this.statusLine.watchProjectDir(() => {
+			this.updateEditorTopBorder();
+			this.ui.requestRender();
+		});
+
 		// Initial top border update
 		this.updateEditorTopBorder();
 	}

@@ -270,6 +270,7 @@ const BUILTIN_SLASH_COMMAND_REGISTRY: ReadonlyArray<BuiltinSlashCommandSpec> = [
 			const projectPath = command.args.trim();
 			try {
 				runtime.ctx.session.sessionManager.setProjectDir(projectPath);
+				runtime.ctx.session.sessionManager.setCwd(projectPath);
 				runtime.ctx.showStatus(`Project directory: ${projectPath}`);
 			} catch (error) {
 				runtime.ctx.showWarning(
