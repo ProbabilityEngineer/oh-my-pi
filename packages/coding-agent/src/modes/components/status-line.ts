@@ -116,15 +116,17 @@ export class StatusLineComponent implements Component {
 		}
 	}
 
+	invalidate(): void {
+		this.#cachedBranch = undefined;
+		this.#cachedGitStatus = null;
+		this.#gitStatusLastFetch = 0;
+	}
+
 	dispose(): void {
 		if (this.#gitWatcher) {
 			this.#gitWatcher.close();
 			this.#gitWatcher = null;
 		}
-	}
-
-	invalidate(): void {
-		this.#cachedBranch = undefined;
 	}
 
 	#getCurrentBranch(): string | null {

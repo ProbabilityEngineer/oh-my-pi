@@ -306,6 +306,10 @@ export class EventController {
 						await this.ctx.handleExitPlanModeTool(details);
 					}
 				}
+				// Invalidate git status cache after bash commands that may modify git state
+				if (event.toolName === "bash" && !event.isError) {
+					this.ctx.statusLine.invalidate();
+				}
 				break;
 			}
 
