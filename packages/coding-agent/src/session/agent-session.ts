@@ -667,17 +667,36 @@ export class AgentSession {
 				if (toolName === "edit" && details?.path) {
 					this.#invalidateFileCacheForPath(details.path);
 				}
-				// Handle partial re-read for hashline mismatch
+				// Handle partial re-read for hashline mismatch - automatically re-read affected ranges
 				if (toolName === "edit" && details?.affectedRanges && isError) {
-					const path = details.path ?? "unknown";
-					const rangesText = details.affectedRanges.map(r => `lines ${r.start}-${r.end}`).join(", ");
+					const path = details.path;
+					if (!path) return;
 
-					// Steer a user message to prompt re-read
-					this.agent.steer({
-						role: "user",
-						content: `Please re-read the file at **${path}** for the following affected ranges: ${rangesText}. This will update the file state for the next edit attempt.`,
-						timestamp: Date.now(),
-					});
+					// Get the read tool from registry
+					const readTool = this.getToolByName("read");
+					if (!readTool) {
+						logger.warn("Read tool not available for auto re-read", { path });
+						return;
+					}
+
+					// Cast readTool to access execute method
+					const readToolWithExecute = readTool as typeof readTool & {
+						execute: (
+							toolCallId: string,
+							params: { path: string; ranges?: Array<{ start: number; end: number }> },
+						) => Promise<unknown>;
+					};
+
+					try {
+						// Execute read tool with affected ranges to get fresh hashlines into conversation
+						await readToolWithExecute.execute(`auto-reread-${Date.now()}`, {
+							path,
+							ranges: details.affectedRanges,
+						});
+						logger.debug("Auto re-read completed", { path, ranges: details.affectedRanges });
+					} catch (readError) {
+						logger.error("Auto re-read failed", { path, error: readError });
+					}
 				}
 
 				if (toolName === "todo_write" && isError) {
