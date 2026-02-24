@@ -11,7 +11,7 @@ Powerful search tool built on ripgrep.
 
 <output>
 {{#if IS_HASHLINE_MODE}}
-- Text output is CID prefixed: `LINE#ID:content`
+- Text output is CID prefixed: `LINE#ID|content`
 {{else}}
 {{#if IS_LINE_NUMBER_MODE}}
 - Text output is line-number-prefixed

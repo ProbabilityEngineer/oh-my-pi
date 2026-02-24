@@ -277,7 +277,6 @@
 - System prompt now identifies agent as operating inside Oh My Pi harness and instructs reading docs:// URLs for omp/pi topics
 - Tool discovery now accepts executable script extensions (.ts, .js, .sh, .bash, .py) in addition to .json and .md files
 - Updated bash and read tool documentation to reference `docs://` URL support
-- Hashline format separator changed from pipe (`|`) to colon (`:`) for improved readability (e.g., `LINE#ID:content` instead of `LINE#ID|content`)
 - Hashline hash representation changed from 4-character base36 to 2-character hexadecimal for more compact line references
 - Hashline edit API: renamed `delete` parameter to `rm` for consistency with standard file operations
 - Hashline edit API: renamed `rename` parameter to `mv` for consistency with standard file operations
