@@ -1,3 +1,5 @@
+import * as path from "node:path";
+import { reset } from "../capability";
 import type { SettingPath, SettingValue } from "../config/settings";
 import { settings } from "../config/settings";
 import type { InteractiveModeContext } from "../modes/types";
@@ -258,8 +260,8 @@ const BUILTIN_SLASH_COMMAND_REGISTRY: ReadonlyArray<BuiltinSlashCommandSpec> = [
 	},
 	{
 		name: "project",
-		description: "Switch project/repository directory",
-		inlineHint: "<path>",
+		description: "Switch project/repository directory and start a new session",
+		inlineHint: "[path]",
 		allowArgs: true,
 		handle: async (command, runtime) => {
 			if (!command.args) {
@@ -269,9 +271,25 @@ const BUILTIN_SLASH_COMMAND_REGISTRY: ReadonlyArray<BuiltinSlashCommandSpec> = [
 			}
 			const projectPath = command.args.trim();
 			try {
-				runtime.ctx.session.sessionManager.setProjectDir(projectPath);
-				runtime.ctx.session.sessionManager.setCwd(projectPath);
-				runtime.ctx.showStatus(`Project directory: ${projectPath}`);
+				// Resolve to absolute path
+				const resolvedPath = path.resolve(projectPath);
+
+				// Update session manager state
+				runtime.ctx.session.sessionManager.setProjectDir(resolvedPath);
+				runtime.ctx.session.sessionManager.setCwd(resolvedPath);
+
+				// Clear capability caches so discovery re-reads from new project
+				reset();
+
+				// Start a new session after switching directory
+				runtime.ctx.editor.setText("");
+				await runtime.ctx.handleClearCommand();
+
+				// Rebuild system prompt with new project context
+				await runtime.ctx.session.refreshBaseSystemPrompt();
+
+				// Show success message
+				runtime.ctx.showStatus(`Project directory: ${resolvedPath}`);
 			} catch (error) {
 				runtime.ctx.showWarning(
 					`Failed to switch project: ${error instanceof Error ? error.message : String(error)}`,

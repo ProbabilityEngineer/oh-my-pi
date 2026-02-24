@@ -99,6 +99,7 @@ export class StatusLineComponent implements Component {
 	watchProjectDir(onProjectDirChange: () => void): void {
 		this.#onProjectDirChange = onProjectDirChange;
 		this.session.sessionManager.onProjectDirChange(() => {
+			this.invalidate();
 			if (this.#onProjectDirChange) {
 				this.#onProjectDirChange();
 			}
@@ -111,7 +112,8 @@ export class StatusLineComponent implements Component {
 			this.#gitWatcher = null;
 		}
 
-		const gitHeadPath = findGitHeadPathSync();
+		const projectDir = this.session.sessionManager.getProjectDir();
+		const gitHeadPath = findGitHeadPathSync(projectDir);
 		if (!gitHeadPath) return;
 
 		try {
@@ -144,7 +146,8 @@ export class StatusLineComponent implements Component {
 			return this.#cachedBranch;
 		}
 
-		const gitHeadPath = findGitHeadPathSync();
+		const projectDir = this.session.sessionManager.getProjectDir();
+		const gitHeadPath = findGitHeadPathSync(projectDir);
 		if (!gitHeadPath) {
 			this.#cachedBranch = null;
 			return null;
@@ -173,7 +176,8 @@ export class StatusLineComponent implements Component {
 		// Fire async fetch, return cached value
 		(async () => {
 			try {
-				const result = await $`git status --porcelain`.quiet().nothrow();
+				const projectDir = this.session.sessionManager.getProjectDir();
+				const result = await $`git status --porcelain`.cwd(projectDir).quiet().nothrow();
 
 				if (result.exitCode !== 0) {
 					this.#cachedGitStatus = null;

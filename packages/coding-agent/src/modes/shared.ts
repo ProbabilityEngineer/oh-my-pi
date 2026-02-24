@@ -38,8 +38,8 @@ export { parseCommandArgs } from "../utils/command-args";
 // ═══════════════════════════════════════════════════════════════════════════
 
 /** Walk up from the project dir to find .git/HEAD. Returns path and content, or null. */
-export async function findGitHeadPathAsync(): Promise<{ path: string; content: string } | null> {
-	let dir = getProjectDir();
+export async function findGitHeadPathAsync(cwd?: string): Promise<{ path: string; content: string } | null> {
+	let dir = cwd ?? getProjectDir();
 	while (true) {
 		const gitHeadPath = path.join(dir, ".git", "HEAD");
 		try {
@@ -57,8 +57,8 @@ export async function findGitHeadPathAsync(): Promise<{ path: string; content: s
 }
 
 /** Walk up from the project dir to find .git/HEAD. Returns path, or null. */
-export function findGitHeadPathSync(): string | null {
-	let dir = getProjectDir();
+export function findGitHeadPathSync(cwd?: string): string | null {
+	let dir = cwd ?? getProjectDir();
 	while (true) {
 		const gitHeadPath = path.join(dir, ".git", "HEAD");
 		if (fs.existsSync(gitHeadPath)) {

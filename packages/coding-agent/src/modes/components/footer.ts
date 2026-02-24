@@ -68,7 +68,8 @@ export class FooterComponent implements Component {
 			this.#gitWatcher = null;
 		}
 
-		findGitHeadPathAsync().then(result => {
+		const projectDir = this.session.sessionManager.getProjectDir();
+		findGitHeadPathAsync(projectDir).then(result => {
 			if (!result) {
 				return;
 			}
@@ -104,6 +105,7 @@ export class FooterComponent implements Component {
 	/**
 	 * Get current git branch by reading .git/HEAD directly.
 	 * Returns null if not in a git repo, branch name otherwise.
+	 * @returns Branch name, "detached", or null
 	 */
 	#getCurrentBranch(): string | null {
 		// Return cached value if available
@@ -113,7 +115,8 @@ export class FooterComponent implements Component {
 
 		// Note: fire-and-forget async call - will return undefined on first call
 		// This is acceptable since it's a cached value that will update on next render
-		findGitHeadPathAsync().then(result => {
+		const projectDir = this.session.sessionManager.getProjectDir();
+		findGitHeadPathAsync(projectDir).then(result => {
 			if (!result) {
 				this.#cachedBranch = null;
 				if (this.#onBranchChange) {
@@ -128,13 +131,9 @@ export class FooterComponent implements Component {
 			} else {
 				this.#cachedBranch = "detached";
 			}
-			if (this.#onBranchChange) {
-				this.#onBranchChange();
-			}
 		});
 
-		// Return undefined while loading (will show on next render once loaded)
-		return null;
+		return this.#cachedBranch ?? null;
 	}
 
 	render(width: number): string[] {

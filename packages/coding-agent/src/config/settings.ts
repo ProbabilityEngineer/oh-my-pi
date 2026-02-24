@@ -515,6 +515,25 @@ export class Settings {
 				logger.debug("Settings: migrated to config.yml", { path: this.#configPath });
 			} catch {}
 		}
+
+		// 4. If no legacy data, create config.yml with recommended defaults
+		if (!migrated) {
+			try {
+				const defaults: RawSettings = {
+					// Edit tool defaults (hashline mode requires these for optimal experience)
+					edit: {
+						mode: "hashline",
+					},
+					// Hashline display in read tool output
+					readHashLines: true,
+				};
+				await Bun.write(this.#configPath, YAML.stringify(defaults, null, 2));
+				logger.debug("Settings: created config.yml with defaults", { path: this.#configPath });
+				this.#global = defaults;
+			} catch (error) {
+				logger.warn("Settings: failed to create config.yml with defaults", { error: String(error) });
+			}
+		}
 	}
 
 	/** Apply schema migrations to raw settings */

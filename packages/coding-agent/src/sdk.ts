@@ -780,7 +780,9 @@ export async function createAgentSession(options: CreateAgentSessionOptions = {}
 		: undefined;
 
 	const toolSession: ToolSession = {
-		cwd,
+		get cwd() {
+			return sessionManager.getCwd();
+		},
 		hasUI: options.hasUI ?? false,
 		enableLsp,
 		get hasEditTool() {
@@ -1120,17 +1122,48 @@ export async function createAgentSession(options: CreateAgentSessionOptions = {}
 
 	const repeatToolDescriptions = settings.get("repeatToolDescriptions");
 	const intentField = settings.get("tools.intentTracing") || $env.PI_INTENT_TRACING === "1" ? INTENT_FIELD : undefined;
+
 	const rebuildSystemPrompt = async (toolNames: string[], tools: Map<string, AgentTool>): Promise<string> => {
 		toolContextStore.setToolNames(toolNames);
+
+		// Read current cwd from session manager (not captured closure)
+		const currentCwd = sessionManager.getCwd();
+
+		// Re-discover all project context for the current directory
+		const [currentContextFiles, currentSkillsResult, currentRulesResult] = await Promise.all([
+			loadContextFilesInternal({ cwd: currentCwd }),
+			skills !== undefined
+				? Promise.resolve({ skills, warnings: skillWarnings })
+				: settings.get("skills.enabled") !== false
+					? loadSkillsInternal({ ...(settings.getGroup("skills") as SkillsSettings), cwd: currentCwd })
+					: Promise.resolve({ skills: [] as Skill[], warnings: undefined }),
+			loadCapability<Rule>(ruleCapability.id, { cwd: currentCwd }),
+		]);
+
+		// Filter rules for rulebook (non-TTSR, non-alwaysApply, with descriptions)
+		const currentRegisteredTtsrRuleNames = new Set<string>();
+		for (const rule of currentRulesResult.items) {
+			if (rule.condition && rule.condition.length > 0) {
+				currentRegisteredTtsrRuleNames.add(rule.name);
+			}
+		}
+		const currentRulebookRules = currentRulesResult.items.filter((rule: Rule) => {
+			if (currentRegisteredTtsrRuleNames.has(rule.name)) return false;
+			if (rule.alwaysApply) return false;
+			if (!rule.description) return false;
+			return true;
+		});
+
 		const memoryInstructions = await buildMemoryToolDeveloperInstructions(agentDir, settings);
+
 		const defaultPrompt = await buildSystemPromptInternal({
-			cwd,
-			skills,
+			cwd: currentCwd,
+			skills: currentSkillsResult.skills,
 			preloadedSkills: options.preloadedSkills,
-			contextFiles,
+			contextFiles: currentContextFiles,
 			tools,
 			toolNames,
-			rules: rulebookRules,
+			rules: currentRulebookRules,
 			skillsSettings: settings.getGroup("skills") as SkillsSettings,
 			appendSystemPrompt: memoryInstructions,
 			repeatToolDescriptions,
@@ -1142,13 +1175,13 @@ export async function createAgentSession(options: CreateAgentSessionOptions = {}
 		}
 		if (typeof options.systemPrompt === "string") {
 			return await buildSystemPromptInternal({
-				cwd,
-				skills,
+				cwd: currentCwd,
+				skills: currentSkillsResult.skills,
 				preloadedSkills: options.preloadedSkills,
-				contextFiles,
+				contextFiles: currentContextFiles,
 				tools,
 				toolNames,
-				rules: rulebookRules,
+				rules: currentRulebookRules,
 				skillsSettings: settings.getGroup("skills") as SkillsSettings,
 				customPrompt: options.systemPrompt,
 				appendSystemPrompt: memoryInstructions,
